@@ -418,6 +418,13 @@
     "OFox Upstream Vendor Help": "OFox video üretimini hangi üst akış sağlayıcısının sunacağı. BytePlus (uluslararası) tutarlı içerik politikasıyla varsayılandır; Volcano Engine Çin anakarası sağlayıcısıdır; Otomatik, OFox ağ geçidinin yükü sağlayıcılar arasında dengelemesine izin verir.",
     "OFox Vendor BytePlus": "BytePlus (uluslararası, varsayılan)",
     "OFox Vendor Volcengine": "Volcano Engine (Çin anakarası)",
-    "OFox Vendor Auto": "Otomatik (ağ geçidi yük dengeleme)"
+    "OFox Vendor Auto": "Otomatik (ağ geçidi yük dengeleme)",
+    "Wizard Step Script": "Konu ve Senaryo",
+    "Wizard Step Video": "Görseller",
+    "Wizard Step Audio": "Ses ve Müzik",
+    "Wizard Step Subtitle": "Altyazı",
+    "Wizard Next": "İleri",
+    "Wizard Back": "Geri",
+    "Script And Keywords": "Senaryo ve Anahtar Kelimeler"
   }
 }

@@ -568,6 +568,13 @@
     "MuAPI Billing Notice Without Script": "每段生成视频都会由 MuAPI 计费。填写或生成视频文案后可查看预计任务数量。",
     "Confirm MuAPI Charge": "我已了解 MuAPI 视频生成会创建付费任务",
     "Confirm MuAPI Charge Help": "MuAPI 素材按脚本片段逐段提交，凑够配音所需时长后立即停止。提交状态不明确时不会自动重试，因为远端任务可能已经创建并产生费用。",
-    "Confirm MuAPI Charge Required": "请确认 MuAPI 生成费用后再生成视频。"
+    "Confirm MuAPI Charge Required": "请确认 MuAPI 生成费用后再生成视频。",
+    "Wizard Step Script": "主题与文案",
+    "Wizard Step Video": "画面素材",
+    "Wizard Step Audio": "配音与音乐",
+    "Wizard Step Subtitle": "字幕",
+    "Wizard Next": "下一步",
+    "Wizard Back": "上一步",
+    "Script And Keywords": "文案与关键词"
   }
 }

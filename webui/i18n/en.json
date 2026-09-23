@@ -568,6 +568,13 @@
     "MuAPI Billing Notice Without Script": "Each generated clip is billed by MuAPI. Enter or generate the video script to see an estimated task count.",
     "Confirm MuAPI Charge": "I understand MuAPI video generation creates paid tasks",
     "Confirm MuAPI Charge Help": "MuAPI clips are submitted one at a time and stop once they cover the voiceover duration. An ambiguous submission is not retried because it may already have created a billable remote task.",
-    "Confirm MuAPI Charge Required": "Please confirm the MuAPI charge before generating the video."
+    "Confirm MuAPI Charge Required": "Please confirm the MuAPI charge before generating the video.",
+    "Wizard Step Script": "Topic & Script",
+    "Wizard Step Video": "Visuals",
+    "Wizard Step Audio": "Voice & Music",
+    "Wizard Step Subtitle": "Subtitles",
+    "Wizard Next": "Next",
+    "Wizard Back": "Back",
+    "Script And Keywords": "Script & Keywords"
   }
 }

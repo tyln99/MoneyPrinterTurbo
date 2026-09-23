@@ -4911,7 +4911,7 @@ def _render_script_settings(panel, params):
                 params.video_subject = st.text_area(
                     tr("Video Subject"),
                     placeholder=tr("Video Subject Placeholder"),
-                    height=96,
+                    height=80,
                     key="video_subject",
                     label_visibility="collapsed",
                 ).strip()
@@ -5033,47 +5033,58 @@ def _render_script_settings(panel, params):
                 _render_loomloom_script_generation(params)
             else:
                 _render_local_script_generation(params)
-            params.video_script = st.text_area(
-                tr("Video Script"),
-                help=tr("Video Script Help"),
-                height=180,
-                key="video_script",
-            )
-            if _effective_script_generation_backend() == "loomloom":
-                st.caption(tr("LoomLoom Video Terms Reuse Help"))
-            elif st.button(
-                tr("Generate Video Keywords"),
-                key="auto_generate_terms",
-                use_container_width=True,
-                type="secondary",
-                icon=":material/auto_awesome:",
-            ):
-                if not params.video_script:
-                    # 视频关键词需要基于文案提取，文案为空时提前提示并跳过模型调用。
-                    st.toast(tr("Please Enter the Video Subject"))
-                    st.warning(tr("Please Enter the Video Subject"))
-                else:
-                    with st.spinner(tr("Generating Video Keywords")):
-                        terms = _run_llm_read_operation(
-                            "generate_terms",
-                            lambda app_config_snapshot: llm.generate_terms(
-                                params.video_subject,
-                                params.video_script,
-                                amount=8 if params.match_materials_to_script else 5,
-                                match_script_order=params.match_materials_to_script,
-                                app_config=app_config_snapshot,
-                            ),
-                        )
-                        if "Error: " in terms:
-                            st.error(tr(terms))
+            # 文案和关键词都由上面的 AI 按钮填充，初始为空。默认折叠可以让
+            # 第一步只剩"填主题 -> 生成"这一条主线；一旦有内容就自动展开，
+            # 避免用户以为生成结果丢失。
+            with st.container(key="advanced_settings_script_output"):
+                with st.expander(
+                    tr("Script And Keywords"),
+                    expanded=bool(
+                        str(st.session_state.get("video_script", "") or "").strip()
+                        or str(st.session_state.get("video_terms", "") or "").strip()
+                    ),
+                ):
+                    params.video_script = st.text_area(
+                        tr("Video Script"),
+                        help=tr("Video Script Help"),
+                        height=140,
+                        key="video_script",
+                    )
+                    if _effective_script_generation_backend() == "loomloom":
+                        st.caption(tr("LoomLoom Video Terms Reuse Help"))
+                    elif st.button(
+                        tr("Generate Video Keywords"),
+                        key="auto_generate_terms",
+                        use_container_width=True,
+                        type="secondary",
+                        icon=":material/auto_awesome:",
+                    ):
+                        if not params.video_script:
+                            # 视频关键词需要基于文案提取，文案为空时提前提示并跳过模型调用。
+                            st.toast(tr("Please Enter the Video Subject"))
+                            st.warning(tr("Please Enter the Video Subject"))
                         else:
-                            st.session_state["video_terms"] = ", ".join(terms)
+                            with st.spinner(tr("Generating Video Keywords")):
+                                terms = _run_llm_read_operation(
+                                    "generate_terms",
+                                    lambda app_config_snapshot: llm.generate_terms(
+                                        params.video_subject,
+                                        params.video_script,
+                                        amount=8 if params.match_materials_to_script else 5,
+                                        match_script_order=params.match_materials_to_script,
+                                        app_config=app_config_snapshot,
+                                    ),
+                                )
+                                if "Error: " in terms:
+                                    st.error(tr(terms))
+                                else:
+                                    st.session_state["video_terms"] = ", ".join(terms)
 
-            params.video_terms = st.text_area(
-                tr("Video Keywords"),
-                help=tr("Video Keywords Help"),
-                key="video_terms",
-            )
+                    params.video_terms = st.text_area(
+                        tr("Video Keywords"),
+                        help=tr("Video Keywords Help"),
+                        key="video_terms",
+                    )
 
 
 def _render_video_settings(panel, params):
@@ -8207,6 +8218,159 @@ def _render_generation_controls(
     return start_button
 
 
+# -----------------------------------------------------------------------------
+# 分步向导：把四个设置面板拆成引导式步骤，降低首次使用者的认知负担
+# -----------------------------------------------------------------------------
+WIZARD_STEPS = ("script", "video", "audio", "subtitle")
+_WIZARD_LAST_STEP = len(WIZARD_STEPS) - 1
+
+
+def _wizard_enabled():
+    """向导是默认布局；习惯旧界面的用户可以设置 ui.layout = "classic" 回到四列。"""
+    layout = str(config.ui.get("layout", "wizard") or "wizard").strip().lower()
+    return layout != "classic"
+
+
+def _wizard_step_labels():
+    return (
+        tr("Wizard Step Script"),
+        tr("Wizard Step Video"),
+        tr("Wizard Step Audio"),
+        tr("Wizard Step Subtitle"),
+    )
+
+
+def _active_wizard_step():
+    raw = st.session_state.get("wizard_step", 0)
+    try:
+        step = int(raw)
+    except (TypeError, ValueError):
+        step = 0
+    return min(max(step, 0), _WIZARD_LAST_STEP)
+
+
+def _go_to_wizard_step(index):
+    try:
+        target = int(index)
+    except (TypeError, ValueError):
+        target = 0
+    st.session_state["wizard_step"] = min(max(target, 0), _WIZARD_LAST_STEP)
+
+
+def _advance_wizard_step(delta):
+    _go_to_wizard_step(_active_wizard_step() + delta)
+
+
+def _apply_wizard_step_visibility(active_index):
+    """
+    只显示当前步骤，其余步骤照常渲染但用 CSS 隐藏。
+
+    之所以隐藏而不是跳过渲染：params 必须一次性拿到四个面板的全部取值，
+    现有 AppTest 用例也按控件 key 在整页查找。隐藏可以同时满足这两点，
+    并让 session_state 行为与四列布局完全一致。
+    """
+    rules = "\n".join(
+        f'div[class*="st-key-wizard_step_{index}"] {{ display: none !important; }}'
+        for index in range(len(WIZARD_STEPS))
+        if index != active_index
+    )
+    if rules:
+        st.markdown(f"<style>{rules}</style>", unsafe_allow_html=True)
+
+
+def _render_wizard_progress(active_index):
+    """顶部步骤条。每一步都可直接点击，避免把用户困在线性流程里。"""
+    labels = _wizard_step_labels()
+    with st.container(key="wizard_progress"):
+        columns = st.columns(len(WIZARD_STEPS))
+        for index, column in enumerate(columns):
+            with column:
+                st.button(
+                    f"{index + 1}. {labels[index]}",
+                    key=f"wizard_nav_{index}",
+                    type="primary" if index == active_index else "secondary",
+                    use_container_width=True,
+                    on_click=_go_to_wizard_step,
+                    args=(index,),
+                )
+
+
+def _render_wizard_step_footer(index):
+    """步骤底部的上一步/下一步。第一步没有上一步，最后一步没有下一步。"""
+    with st.container(key=f"wizard_footer_{index}"):
+        # 用窄列承载导航按钮。整行平分会让按钮宽达数百像素，
+        # 视觉上盖过步骤内容里真正的主操作。
+        columns = st.columns([1, 4, 1])
+        with columns[0]:
+            if index > 0:
+                st.button(
+                    tr("Wizard Back"),
+                    key=f"wizard_back_{index}",
+                    use_container_width=True,
+                    on_click=_advance_wizard_step,
+                    args=(-1,),
+                )
+        with columns[2]:
+            if index < _WIZARD_LAST_STEP:
+                st.button(
+                    tr("Wizard Next"),
+                    key=f"wizard_next_{index}",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=_advance_wizard_step,
+                    args=(1,),
+                )
+
+
+def _render_classic_layout(params):
+    """原有的四列布局，保留给习惯一屏看全部设置的用户。"""
+    with st.container(key="main_settings_grid"):
+        panel = st.columns(4)
+    _render_script_settings(panel[0], params)
+    uploaded_files = _render_video_settings(panel[1], params)
+    uploaded_audio_file, uploaded_bgm_file, voice_mode = _render_audio_settings(
+        panel[2], params
+    )
+    _render_subtitle_settings(panel[3], params)
+    return uploaded_files, uploaded_audio_file, uploaded_bgm_file, voice_mode
+
+
+def _render_wizard_layout(params):
+    """
+    分步布局。四个设置面板全部渲染，只有当前步骤可见。
+
+    生成按钮和任务进度不参与分步，始终留在页面底部：把它藏进某一步会让
+    用户在生成过程中看不到进度和成片，反而比一屏铺开更难用。
+    """
+    active_step = _active_wizard_step()
+    _render_wizard_progress(active_step)
+    _apply_wizard_step_visibility(active_step)
+
+    script_step = st.container(key="wizard_step_0")
+    _render_script_settings(script_step, params)
+    with script_step:
+        _render_wizard_step_footer(0)
+
+    video_step = st.container(key="wizard_step_1")
+    uploaded_files = _render_video_settings(video_step, params)
+    with video_step:
+        _render_wizard_step_footer(1)
+
+    audio_step = st.container(key="wizard_step_2")
+    uploaded_audio_file, uploaded_bgm_file, voice_mode = _render_audio_settings(
+        audio_step, params
+    )
+    with audio_step:
+        _render_wizard_step_footer(2)
+
+    subtitle_step = st.container(key="wizard_step_3")
+    _render_subtitle_settings(subtitle_step, params)
+    with subtitle_step:
+        _render_wizard_step_footer(3)
+
+    return uploaded_files, uploaded_audio_file, uploaded_bgm_file, voice_mode
+
+
 def _render_application():
     """按固定顺序渲染顶部栏、弹窗、生成表单和任务结果。"""
     _render_top_bar()
@@ -8225,25 +8389,16 @@ def _render_application():
     if restore_applied or restore_succeeded:
         st.success(tr("Task Configuration Loaded"))
 
-    with st.container(key="main_settings_grid"):
-        panel = st.columns(4)
-    left_panel = panel[0]
-    middle_panel = panel[1]
-    audio_panel = panel[2]
-    right_panel = panel[3]
-
     params = VideoParams(video_subject="")
     params.match_materials_to_script = bool(
         st.session_state.get("match_materials_to_script", False)
     )
-    _render_script_settings(left_panel, params)
 
-    uploaded_files = _render_video_settings(middle_panel, params)
-    uploaded_audio_file, uploaded_bgm_file, voice_mode = _render_audio_settings(
-        audio_panel, params
-    )
-
-    _render_subtitle_settings(right_panel, params)
+    if _wizard_enabled():
+        panel_inputs = _render_wizard_layout(params)
+    else:
+        panel_inputs = _render_classic_layout(params)
+    uploaded_files, uploaded_audio_file, uploaded_bgm_file, voice_mode = panel_inputs
 
     generation_submitted = _render_generation_controls(
         params,

@@ -418,6 +418,13 @@
     "OFox Upstream Vendor Help": "Какой вышестоящий поставщик обслуживает генерацию видео OFox. BytePlus (международный) — значение по умолчанию с единой контентной политикой; Volcano Engine — поставщик материкового Китая; Авто — шлюз OFox сам распределяет нагрузку между поставщиками.",
     "OFox Vendor BytePlus": "BytePlus (международный, по умолчанию)",
     "OFox Vendor Volcengine": "Volcano Engine (материковый Китай)",
-    "OFox Vendor Auto": "Авто (балансировка шлюзом)"
+    "OFox Vendor Auto": "Авто (балансировка шлюзом)",
+    "Wizard Step Script": "Тема и сценарий",
+    "Wizard Step Video": "Визуал",
+    "Wizard Step Audio": "Голос и музыка",
+    "Wizard Step Subtitle": "Субтитры",
+    "Wizard Next": "Далее",
+    "Wizard Back": "Назад",
+    "Script And Keywords": "Сценарий и ключевые слова"
   }
 }

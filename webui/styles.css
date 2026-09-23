@@ -484,3 +484,43 @@ div[class*="st-key-task_row_"] button[kind="secondary"] p {
         min-width: 1.75rem !important;
     }
 }
+
+/* 分步向导的顶部步骤条。步骤按钮属于导航而不是主操作，因此弱化未选中步骤的
+   视觉重量，避免和“生成视频”主按钮争夺注意力；当前步骤沿用 primary 样式。
+   同时匹配 kind 属性和 data-testid，兼容不同 Streamlit 版本的按钮实现。 */
+div[class*="st-key-wizard_progress"] {
+    margin-bottom: 0.75rem;
+}
+
+div[class*="st-key-wizard_progress"] button {
+    border: 0 !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    min-height: 2.5rem !important;
+}
+
+div[class*="st-key-wizard_progress"] button[kind="secondary"],
+div[class*="st-key-wizard_progress"] [data-testid="stBaseButton-secondary"] {
+    background: color-mix(in srgb, currentColor 5%, transparent) !important;
+    opacity: 0.72;
+}
+
+div[class*="st-key-wizard_progress"] button[kind="secondary"]:hover,
+div[class*="st-key-wizard_progress"] [data-testid="stBaseButton-secondary"]:hover {
+    opacity: 1;
+    background: color-mix(in srgb, currentColor 10%, transparent) !important;
+}
+
+/* 步骤底部的上一步/下一步需要和步骤内容拉开距离，明确它属于当前步骤的结尾。 */
+div[class*="st-key-wizard_footer_"] {
+    margin-top: 0.75rem;
+}
+
+/* 分步向导是单列布局，在宽屏上铺满整行会让表单又宽又散，一行文字的阅读
+   长度也过长。这里限制正文宽度并居中。选择器依赖页面上存在步骤条，因此
+   经典四列布局不会被匹配，仍然占满宽度。 */
+div[data-testid="stMainBlockContainer"]:has(div[class*="st-key-wizard_progress"]) {
+    max-width: 1080px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
