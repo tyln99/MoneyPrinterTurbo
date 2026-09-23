@@ -133,9 +133,13 @@ VIDEO_SOURCE_GROUPS = {
         "wavespeed",
         "muapi",
     ),
-    "ai_image": ("openai_image",),
+    "ai_image": ("openai_image", "pollinations_image"),
     "local": ("local",),
 }
+# Flattened once so validation cannot fall behind what the dropdown offers.
+SELECTABLE_VIDEO_SOURCES = frozenset(
+    source for group in VIDEO_SOURCE_GROUPS.values() for source in group
+)
 # Upload-Post 的 API Key 与发布用户分别在两个页面管理，并且发布用户名称
 # 不等于登录邮箱。集中维护入口可以避免多语言文案各自硬编码 URL 后发生偏差，
 # 也方便用户从 WebUI 直接完成首次配置和后续账号维护。
@@ -5109,6 +5113,7 @@ def _render_video_settings(panel, params):
                 "muapi": tr("MuAPI AI Video"),
                 "loomloom": tr("Shengsuan Cloud AI Video"),
                 "openai_image": tr("OpenAI Compatible Text-to-Image"),
+                "pollinations_image": tr("Pollinations Free Text-to-Image"),
                 "local": tr("Local file"),
             }
             saved_video_source_name = str(
@@ -7924,19 +7929,10 @@ def _render_generation_controls(
             voxcpm_prompt_audio = _get_voxcpm_effective_prompt_audio()
             voxcpm_prompt_text = _get_voxcpm_prompt_text()
 
-        if params.video_source not in [
-            "pexels",
-            "pixabay",
-            "coverr",
-            "wavespeed",
-            "volcengine_seedance",
-            "ofox",
-            "metaso_minimax",
-            "muapi",
-            "loomloom",
-            "openai_image",
-            "local",
-        ]:
+        # Derived from the dropdown rather than repeated by hand: the two lists
+        # drifted apart once already and a source the user could select was then
+        # rejected at submit time.
+        if params.video_source not in SELECTABLE_VIDEO_SOURCES:
             _remove_active_generation_task(task_id)
             st.error(tr("Please Select a Valid Video Source"))
             st.stop()

@@ -1,3 +1,4 @@
+import ast
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -125,6 +126,7 @@ def test_grouped_video_source_keeps_groups_and_accessible_label_binding():
             "wavespeed",
             "muapi",
             "openai_image",
+            "pollinations_image",
             "local",
         ]
 
@@ -133,3 +135,35 @@ def test_grouped_video_source_keeps_groups_and_accessible_label_binding():
         assert "label.htmlFor = data.controlId" in harness.declaration["js"]
         assert "select.id = data.controlId" in harness.declaration["js"]
         assert "flex-wrap: wrap" in harness.declaration["css"]
+
+
+def test_submit_validation_is_derived_from_the_dropdown_groups():
+    """
+    The submit-time whitelist must cover every option the dropdown offers.
+
+    These used to be two hand-maintained lists and they drifted:
+    "pollinations_image" could be selected but was then rejected with
+    "Please Select a Valid Video Source". Deriving the whitelist from
+    VIDEO_SOURCE_GROUPS makes that class of bug impossible, so this test pins
+    the derivation rather than re-listing the sources a third time.
+    """
+    source = WEBUI_MAIN.read_text(encoding="utf-8")
+    tree = ast.parse(source)
+
+    groups = next(
+        ast.literal_eval(node.value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(t, ast.Name) and t.id == "VIDEO_SOURCE_GROUPS"
+            for t in node.targets
+        )
+    )
+    selectable = {source_id for group in groups.values() for source_id in group}
+    assert "pollinations_image" in selectable
+    assert "openai_image" in selectable
+
+    assert "params.video_source not in SELECTABLE_VIDEO_SOURCES" in source, (
+        "submit validation must use the set derived from VIDEO_SOURCE_GROUPS, "
+        "not a second hand-written list"
+    )

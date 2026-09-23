@@ -22,6 +22,7 @@ from app.services import (
     metaso_minimax,
     muapi,
     ofox,
+    pollinations_image,
     task_artifacts,
     video,
     volcengine_seedance,
@@ -1393,6 +1394,7 @@ def _request_openai_image(endpoint: str, payload: dict) -> tuple[bytes | None, s
 def _save_openai_image_file(
     image_bytes: bytes,
     save_dir: str,
+    file_prefix: str = "openai-image",
 ) -> tuple[str, int, int]:
     """
     把生成结果规范成 PNG 落盘，返回 (路径, 宽, 高)。
@@ -1406,7 +1408,9 @@ def _save_openai_image_file(
     elif not os.path.isdir(save_dir):
         os.makedirs(save_dir, exist_ok=True)
 
-    image_path = os.path.join(save_dir, f"openai-image-{uuid.uuid4().hex[:12]}.png")
+    image_path = os.path.join(
+        save_dir, f"{file_prefix}-{uuid.uuid4().hex[:12]}.png"
+    )
 
     # 图片解码失败可以降级为“跳过当前关键词”，但目录权限、磁盘空间和文件
     # 写入失败必须继续抛出，否则按需生成循环会在本地无法保存文件时继续创建
@@ -1494,6 +1498,77 @@ def generate_images_openai(
     return [item]
 
 
+def generate_images_pollinations(
+    search_term: str,
+    minimum_duration: int,
+    video_aspect: VideoAspect = VideoAspect.portrait,
+    save_dir: str = "",
+) -> List[MaterialInfo]:
+    """
+    Generate one image per keyword with the free Pollinations service.
+
+    Same signature and "empty list means skip this keyword" contract as
+    generate_images_openai, so both can drive the shared on-demand loop.
+
+    The style template is deliberately shared with the OpenAI-compatible source
+    (``openai_image_prompt_template``): it describes the look the user wants,
+    not the vendor, so switching sources should not mean re-entering it.
+
+    A random seed is sent because the service is otherwise deterministic per
+    prompt - two scenes that resolved to the same keyword would come back with
+    byte-identical images.
+
+    The requested size is the real output canvas. Pollinations caps resolution
+    but preserves the aspect ratio (a 1080x1920 request returns 576x1024), so
+    framing is correct and only sharpness is lost when it is scaled up.
+    """
+    aspect = VideoAspect(video_aspect)
+    clip_duration = max(int(minimum_duration), 1)
+    width, height = aspect.to_resolution()
+    prompt = _openai_image_prompt(search_term)
+    seed = random.randint(1, 2**31 - 1)
+
+    logger.info(
+        f"generating image via pollinations: term={search_term!r}, "
+        f"size={width}x{height}, seed={seed}"
+    )
+    image_bytes, failure_detail = pollinations_image.generate_image(
+        prompt=prompt, width=width, height=height, seed=seed
+    )
+    if image_bytes is None:
+        logger.error(
+            f"pollinations image generation failed: term={search_term!r}, "
+            f"detail={failure_detail}"
+        )
+        return []
+
+    try:
+        image_path, actual_width, actual_height = _save_openai_image_file(
+            image_bytes, save_dir, file_prefix="pollinations-image"
+        )
+    except _OpenAIImageDecodeError as e:
+        logger.error(
+            "pollinations image response is not a decodable image, skipping "
+            f"term: term={search_term!r}, error={type(e).__name__}, detail={e}"
+        )
+        return []
+
+    item = MaterialInfo()
+    item.provider = "pollinations_image"
+    item.url = image_path
+    item.duration = clip_duration
+    item.source_info = {
+        "provider": "pollinations_image",
+        "search_term": search_term,
+        "rendition": {
+            "id": None,
+            "width": actual_width,
+            "height": actual_height,
+        },
+    }
+    return [item]
+
+
 def _render_openai_image_video(image_path: str, clip_duration: int) -> str:
     """
     把生成的图片渲染成 mp4 片段，复用 local 素材的"图片 → 动态片段"管线。
@@ -1518,6 +1593,7 @@ def _download_videos_openai_image_on_demand(
     audio_duration: float,
     max_clip_duration: int,
     material_directory: str,
+    generate_images: Callable[..., List[MaterialInfo]] = None,
 ) -> List[str]:
     """
     按脚本片段顺序逐张生成 OpenAI 兼容文生图素材，凑够所需总时长立即停止。
@@ -1549,8 +1625,12 @@ def _download_videos_openai_image_on_demand(
         _persist_material_sources(task_id, material_sources)
         return video_paths
 
+    # Every image source shares this loop; only the generator differs.
+    if generate_images is None:
+        generate_images = generate_images_openai
+
     for search_term in search_terms:
-        items = generate_images_openai(
+        items = generate_images(
             search_term=search_term,
             minimum_duration=max_clip_duration,
             video_aspect=video_aspect,
@@ -1780,6 +1860,20 @@ def download_videos(
             max_clip_duration=max_clip_duration,
             material_directory=material_directory,
         )
+    if source == "pollinations_image":
+        # Free and keyless, so there is no billing risk here, but it reuses the
+        # on-demand loop anyway: generating more clips than the narration needs
+        # would only waste wall-clock time on a rate-limited shared service.
+        return _download_videos_openai_image_on_demand(
+            task_id=task_id,
+            search_terms=search_terms,
+            video_aspect=video_aspect,
+            audio_duration=audio_duration,
+            max_clip_duration=max_clip_duration,
+            material_directory=material_directory,
+            generate_images=generate_images_pollinations,
+        )
+
     if source == "openai_image":
         # 与 WaveSpeed 相同的按需付费语义：文生图按张计费，逐段生成、凑够
         # 所需时长立即停止。生成结果是一次性的本地图片文件，也不参与 24

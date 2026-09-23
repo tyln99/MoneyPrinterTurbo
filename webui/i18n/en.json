@@ -580,6 +580,7 @@
     "Subtitle Source Edge": "From AI voiceover (instant)",
     "Subtitle Source Whisper": "Transcribe audio with Whisper (slower)",
     "Subtitle Source Help": "Edge reuses the timing that the AI voiceover already provides, so subtitles appear instantly and cost nothing. It cannot read an audio file you upload yourself. Whisper transcribes any audio locally and works with uploaded audio, but it downloads a model on first use and is slower on CPU.",
-    "Subtitle Source Edge Upload Warning": "You are using uploaded audio, but the subtitle source is set to the AI voiceover timing, which cannot read an external audio file. The video will have no subtitles. Switch the subtitle source to Whisper."
+    "Subtitle Source Edge Upload Warning": "You are using uploaded audio, but the subtitle source is set to the AI voiceover timing, which cannot read an external audio file. The video will have no subtitles. Switch the subtitle source to Whisper.",
+    "Pollinations Free Text-to-Image": "Pollinations (free, no API key)"
   }
 }
