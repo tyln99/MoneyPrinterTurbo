@@ -5033,9 +5033,10 @@ def _render_script_settings(panel, params):
                 _render_loomloom_script_generation(params)
             else:
                 _render_local_script_generation(params)
-            # 文案和关键词都由上面的 AI 按钮填充，初始为空。默认折叠可以让
-            # 第一步只剩"填主题 -> 生成"这一条主线；一旦有内容就自动展开，
-            # 避免用户以为生成结果丢失。
+            # Script and keywords are filled in by the AI button above and start
+            # empty. Collapsing by default leaves step 1 with a single line of
+            # action ("enter a topic -> generate"); it auto-expands once there is
+            # content so the user never thinks the result was lost.
             with st.container(key="advanced_settings_script_output"):
                 with st.expander(
                     tr("Script And Keywords"),
@@ -7501,6 +7502,47 @@ def _render_subtitle_settings(panel, params):
             )
             _set_runtime_config("ui", "subtitle_enabled", params.subtitle_enabled)
             subtitle_settings_disabled = not params.subtitle_enabled
+
+            # The subtitle source used to be editable only by hand in config.toml,
+            # so a user uploading their own audio silently got a video with no
+            # subtitles. Surface it here and warn on the combination that breaks.
+            subtitle_provider_labels = {
+                "edge": tr("Subtitle Source Edge"),
+                "whisper": tr("Subtitle Source Whisper"),
+            }
+            saved_subtitle_provider = (
+                str(config.app.get("subtitle_provider", "edge") or "edge")
+                .strip()
+                .lower()
+            )
+            if saved_subtitle_provider not in subtitle_provider_labels:
+                saved_subtitle_provider = "edge"
+            selected_subtitle_provider = stable_selectbox(
+                tr("Subtitle Source"),
+                options=list(subtitle_provider_labels),
+                default_value=saved_subtitle_provider,
+                key="subtitle_provider_select",
+                format_func=subtitle_provider_labels.get,
+                help=tr("Subtitle Source Help"),
+                disabled=subtitle_settings_disabled,
+            )
+            _set_runtime_config("app", "subtitle_provider", selected_subtitle_provider)
+
+            # Edge subtitles reuse the timeline the TTS engine returns. Uploaded
+            # audio carries no such timeline and only Whisper can transcribe it
+            # directly, so this combination silently ships a subtitle-free video.
+            if (
+                params.subtitle_enabled
+                and selected_subtitle_provider == "edge"
+                and str(
+                    st.session_state.get(
+                        localized_widget_key("voice_mode_control"), ""
+                    )
+                )
+                == "upload"
+            ):
+                st.warning(tr("Subtitle Source Edge Upload Warning"))
+
             font_names = get_all_fonts()
             saved_font_name = config.ui.get(
                 "font_name", DEFAULT_SUBTITLE_SETTINGS["font_name"]
@@ -8219,14 +8261,15 @@ def _render_generation_controls(
 
 
 # -----------------------------------------------------------------------------
-# 分步向导：把四个设置面板拆成引导式步骤，降低首次使用者的认知负担
+# Step-by-step wizard: split the four settings panels into guided steps so a
+# first-time user is not faced with every control at once.
 # -----------------------------------------------------------------------------
 WIZARD_STEPS = ("script", "video", "audio", "subtitle")
 _WIZARD_LAST_STEP = len(WIZARD_STEPS) - 1
 
 
 def _wizard_enabled():
-    """向导是默认布局；习惯旧界面的用户可以设置 ui.layout = "classic" 回到四列。"""
+    """Wizard is the default layout; set ui.layout = "classic" for the old 4-column grid."""
     layout = str(config.ui.get("layout", "wizard") or "wizard").strip().lower()
     return layout != "classic"
 
@@ -8263,11 +8306,12 @@ def _advance_wizard_step(delta):
 
 def _apply_wizard_step_visibility(active_index):
     """
-    只显示当前步骤，其余步骤照常渲染但用 CSS 隐藏。
+    Show only the active step; the others still render but are hidden with CSS.
 
-    之所以隐藏而不是跳过渲染：params 必须一次性拿到四个面板的全部取值，
-    现有 AppTest 用例也按控件 key 在整页查找。隐藏可以同时满足这两点，
-    并让 session_state 行为与四列布局完全一致。
+    Hiding rather than skipping the render is deliberate: params must collect the
+    values of all four panels in one pass, and the existing AppTest cases look up
+    widgets by key across the whole page. Hiding satisfies both and keeps
+    session_state behaving exactly as it does in the 4-column layout.
     """
     rules = "\n".join(
         f'div[class*="st-key-wizard_step_{index}"] {{ display: none !important; }}'
@@ -8279,7 +8323,7 @@ def _apply_wizard_step_visibility(active_index):
 
 
 def _render_wizard_progress(active_index):
-    """顶部步骤条。每一步都可直接点击，避免把用户困在线性流程里。"""
+    """Top step bar. Every step is clickable so the user is not locked into a linear flow."""
     labels = _wizard_step_labels()
     with st.container(key="wizard_progress"):
         columns = st.columns(len(WIZARD_STEPS))
@@ -8296,10 +8340,11 @@ def _render_wizard_progress(active_index):
 
 
 def _render_wizard_step_footer(index):
-    """步骤底部的上一步/下一步。第一步没有上一步，最后一步没有下一步。"""
+    """Back/next at the bottom of a step. No back on the first, no next on the last."""
     with st.container(key=f"wizard_footer_{index}"):
-        # 用窄列承载导航按钮。整行平分会让按钮宽达数百像素，
-        # 视觉上盖过步骤内容里真正的主操作。
+        # Keep the nav buttons in narrow side columns. Splitting the full row
+        # would make them hundreds of pixels wide and visually outweigh the real
+        # primary action inside the step.
         columns = st.columns([1, 4, 1])
         with columns[0]:
             if index > 0:
@@ -8323,7 +8368,7 @@ def _render_wizard_step_footer(index):
 
 
 def _render_classic_layout(params):
-    """原有的四列布局，保留给习惯一屏看全部设置的用户。"""
+    """The original 4-column grid, kept for users who prefer every setting on one screen."""
     with st.container(key="main_settings_grid"):
         panel = st.columns(4)
     _render_script_settings(panel[0], params)
@@ -8337,10 +8382,11 @@ def _render_classic_layout(params):
 
 def _render_wizard_layout(params):
     """
-    分步布局。四个设置面板全部渲染，只有当前步骤可见。
+    Wizard layout. All four settings panels render; only the active step is visible.
 
-    生成按钮和任务进度不参与分步，始终留在页面底部：把它藏进某一步会让
-    用户在生成过程中看不到进度和成片，反而比一屏铺开更难用。
+    The generate button and task progress stay outside the steps, pinned below the
+    page: hiding them inside a step would leave the user unable to watch progress
+    or see the finished video while generation runs.
     """
     active_step = _active_wizard_step()
     _render_wizard_progress(active_step)
