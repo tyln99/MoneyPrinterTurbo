@@ -5135,6 +5135,42 @@ def _render_video_settings(panel, params):
             )
             _set_runtime_config("app", "video_source", params.video_source)
 
+            # Style is a creative choice, so it belongs next to the source in the
+            # main flow rather than buried in the settings dialog. Only shown for
+            # sources that actually generate imagery; stock search ignores it.
+            if params.video_source in VIDEO_SOURCE_GROUPS["ai_image"]:
+                style_labels = {
+                    "cinematic": tr("Visual Style Cinematic"),
+                    "anime": tr("Visual Style Anime"),
+                    "watercolor": tr("Visual Style Watercolor"),
+                    "flat": tr("Visual Style Flat"),
+                    "custom": tr("Visual Style Custom"),
+                }
+                saved_style = (
+                    str(config.app.get("visual_style", "") or "").strip().lower()
+                )
+                if saved_style not in style_labels:
+                    saved_style = "cinematic"
+                selected_style = stable_selectbox(
+                    tr("Visual Style"),
+                    options=list(style_labels),
+                    default_value=saved_style,
+                    key="visual_style_select",
+                    format_func=style_labels.get,
+                    help=tr("Visual Style Help"),
+                )
+                _set_runtime_config("app", "visual_style", selected_style)
+                if selected_style == "custom":
+                    custom_style_template = st.text_input(
+                        tr("Visual Style Template"),
+                        value=str(config.app.get("visual_style_template", "") or ""),
+                        key="visual_style_template_input",
+                        help=tr("Visual Style Template Help"),
+                    )
+                    _set_runtime_config(
+                        "app", "visual_style_template", custom_style_template.strip()
+                    )
+
             loomloom_video_capability = None
             if params.video_source == "loomloom":
                 # 尽早读取缓存，使下方画面比例控件直接受当前 Profile 约束。

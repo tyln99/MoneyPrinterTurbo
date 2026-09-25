@@ -1170,22 +1170,57 @@ def _openai_image_size(video_aspect: VideoAspect) -> str:
     return OPENAI_IMAGE_DEFAULT_SIZES.get(VideoAspect(video_aspect), "1024x1024")
 
 
-def _openai_image_prompt(search_term: str) -> str:
+# Look is a creative choice about the output, not a property of the vendor, so
+# the style lives in one shared setting instead of being re-entered per source.
+# Measured on Pollinations' "sana": only non-photographic styles separate
+# reliably - "3d render" and "documentary photo" both collapsed into the same
+# image as "cinematic photo", so offering them would look like a broken control.
+VISUAL_STYLE_PRESETS = {
+    "cinematic": (
+        "cinematic photo of {term}, photorealistic, shallow depth of field, "
+        "golden hour"
+    ),
+    "anime": "anime illustration of {term}, cel shaded, vibrant colors",
+    "watercolor": (
+        "watercolor painting of {term}, soft edges, paper texture, pastel palette"
+    ),
+    "flat": (
+        "flat vector illustration of {term}, minimal, bold shapes, limited palette"
+    ),
+}
+
+
+def resolve_visual_style_template() -> str:
     """
-    把脚本关键词包装成最终提示词。
+    Resolve the style template every generated-material source shares.
 
-    可选配置 ``openai_image_prompt_template`` 支持 ``{term}`` 占位符，
-    用于统一附加风格修饰（如画质、构图、镜头语言），提升图文匹配度：
+    Order: a named preset wins, then the hand-written template, then the
+    pre-existing ``openai_image_prompt_template`` so configs written before the
+    shared layer keep working unchanged.
 
-    .. code-block:: toml
-
-        openai_image_prompt_template = "cinematic photo of {term}, photorealistic"
-
-    留空或不含占位符时退回关键词原文，行为与旧版本完全一致。占位符
-    替换失败（如模板误写了格式化语法）也回退原文，不让配置错误中断
-    整个生成任务。
+    The preset has to win, otherwise a template typed once would keep overriding
+    every preset picked afterwards and the control would look broken. An
+    unrecognised preset falls through rather than silently disabling the style.
     """
-    template = str(config.app.get("openai_image_prompt_template", "") or "").strip()
+    app_config = config.app
+    preset = str(app_config.get("visual_style", "") or "").strip().lower()
+    if preset in VISUAL_STYLE_PRESETS:
+        return VISUAL_STYLE_PRESETS[preset]
+    custom = str(app_config.get("visual_style_template", "") or "").strip()
+    if custom:
+        return custom
+    return str(app_config.get("openai_image_prompt_template", "") or "").strip()
+
+
+def apply_visual_style(search_term: str) -> str:
+    """
+    Wrap a script keyword in the configured style.
+
+    Falls back to the bare keyword when no template is set or the placeholder is
+    missing, so a malformed template degrades the look instead of failing the
+    whole task.
+    """
+    template = resolve_visual_style_template()
     if not template or "{term}" not in template:
         return search_term
     try:
@@ -1455,7 +1490,7 @@ def generate_images_openai(
     image_size = _openai_image_size(aspect)
     payload = {
         "model": model,
-        "prompt": _openai_image_prompt(search_term),
+        "prompt": apply_visual_style(search_term),
         "n": 1,
         "size": image_size,
     }
@@ -1525,7 +1560,7 @@ def generate_images_pollinations(
     aspect = VideoAspect(video_aspect)
     clip_duration = max(int(minimum_duration), 1)
     width, height = aspect.to_resolution()
-    prompt = _openai_image_prompt(search_term)
+    prompt = apply_visual_style(search_term)
     seed = random.randint(1, 2**31 - 1)
 
     logger.info(

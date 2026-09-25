@@ -207,6 +207,15 @@ openai_image_size = ""
 # Example: "cinematic photo of {term}, photorealistic, high detail"
 openai_image_prompt_template = ""
 
+# Visual style shared by every source that generates imagery, so switching
+# provider keeps the look. One of: cinematic, anime, watercolor, flat, or
+# custom. With "custom", visual_style_template below is used instead.
+# A named preset takes precedence over visual_style_template; when neither is
+# set, openai_image_prompt_template above is still honoured.
+visual_style = ""
+# Only used when visual_style = "custom". Same "{term}" placeholder.
+visual_style_template = ""
+
 # Optional TwelveLabs integration for semantic material ranking and video QA.
 # Install the optional dependency with: uv sync --extra twelvelabs
 # Create an API key at https://playground.twelvelabs.io/

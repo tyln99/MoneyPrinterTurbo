@@ -581,6 +581,15 @@
     "Subtitle Source Whisper": "Transcribe audio with Whisper (slower)",
     "Subtitle Source Help": "Edge reuses the timing that the AI voiceover already provides, so subtitles appear instantly and cost nothing. It cannot read an audio file you upload yourself. Whisper transcribes any audio locally and works with uploaded audio, but it downloads a model on first use and is slower on CPU.",
     "Subtitle Source Edge Upload Warning": "You are using uploaded audio, but the subtitle source is set to the AI voiceover timing, which cannot read an external audio file. The video will have no subtitles. Switch the subtitle source to Whisper.",
-    "Pollinations Free Text-to-Image": "Pollinations (free, no API key)"
+    "Pollinations Free Text-to-Image": "Pollinations (free, no API key)",
+    "Visual Style": "Visual Style",
+    "Visual Style Cinematic": "Cinematic photo",
+    "Visual Style Anime": "Anime illustration",
+    "Visual Style Watercolor": "Watercolor painting",
+    "Visual Style Flat": "Flat vector",
+    "Visual Style Custom": "Custom prompt",
+    "Visual Style Help": "Applied to every generated image. Non-photographic styles separate most reliably; how closely a style is followed depends on the image model.",
+    "Visual Style Template": "Style prompt",
+    "Visual Style Template Help": "Use {term} where the script keyword should go, for example: watercolor painting of {term}, soft edges. Without {term} the keyword is sent on its own."
   }
 }
