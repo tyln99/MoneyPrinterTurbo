@@ -28,3 +28,7 @@ logs/
 
 storage/
 config.toml
+
+# Frontend: the build stage installs its own dependencies
+web/node_modules/
+web/dist/

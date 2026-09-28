@@ -1,0 +1,3924 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MoneyPrinterTurbo",
+    "description": "<a href='https://github.com/harry0703/MoneyPrinterTurbo'>https://github.com/harry0703/MoneyPrinterTurbo</a>",
+    "version": "1.3.7"
+  },
+  "paths": {
+    "/ping": {
+      "get": {
+        "tags": [
+          "Health Check"
+        ],
+        "summary": "Ping",
+        "description": "检查服务可用性",
+        "operationId": "ping_ping_get",
+        "responses": {
+          "200": {
+            "description": "pong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Ping Ping Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/videos": {
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Generate a short video",
+        "operationId": "create_video_api_v1_videos_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskVideoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subtitle": {
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Generate subtitle only",
+        "operationId": "create_subtitle_api_v1_subtitle_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubtitleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audio": {
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Generate audio only",
+        "operationId": "create_audio_api_v1_audio_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Get all tasks",
+        "operationId": "get_all_tasks_api_v1_tasks_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Query task status",
+        "operationId": "get_task_api_v1_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Task ID",
+              "title": "Task Id"
+            },
+            "description": "Task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskQueryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Delete a generated short video task",
+        "operationId": "delete_video_api_v1_tasks__task_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Task ID",
+              "title": "Task Id"
+            },
+            "description": "Task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDeletionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/musics": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Retrieve local BGM files",
+        "operationId": "get_bgm_list_api_v1_musics_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BgmRetrieveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Upload a background music file",
+        "description": "Validate an MP3, M4A, AAC, WAV, FLAC, OGG, OPUS, or WMA file up to 30 MB and store it under an immutable UUID filename in storage/bgm.",
+        "operationId": "upload_bgm_file_api_v1_musics_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_bgm_file_api_v1_musics_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BgmUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The filename, format, size, or audio stream is invalid"
+          },
+          "500": {
+            "description": "FFmpeg validation or persistent storage is unavailable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/video_materials": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Retrieve local video materials",
+        "operationId": "get_video_materials_list_api_v1_video_materials_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoMaterialRetrieveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Upload the video material file to the local videos directory",
+        "operationId": "upload_video_material_file_api_v1_video_materials_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_video_material_file_api_v1_video_materials_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoMaterialUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stream/{file_path}": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Stream Video",
+        "operationId": "stream_video_api_v1_stream__file_path__get",
+        "parameters": [
+          {
+            "name": "file_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Path"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/download/{file_path}": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Download Video",
+        "description": "download video\n:param request: Request request\n:param file_path: video file path, eg: /cd1727ed-3473-42a2-a7da-4faafafec72b/final-1.mp4\n:return: video file",
+        "operationId": "download_video_api_v1_download__file_path__get",
+        "parameters": [
+          {
+            "name": "file_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Path"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts": {
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Create a script for the video",
+        "operationId": "generate_video_script_api_v1_scripts_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoScriptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoScriptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/terms": {
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Generate video terms based on the video script",
+        "operationId": "generate_video_terms_api_v1_terms_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoTermsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoTermsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/social-metadata": {
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Generate social publishing metadata",
+        "operationId": "generate_video_social_metadata_api_v1_social_metadata_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoSocialMetadataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoSocialMetadataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "List projects",
+        "operationId": "get_projects_api_v1_projects_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Create a project",
+        "operationId": "create_project_api_v1_projects_post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/episodes": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "List episodes",
+        "operationId": "get_episodes_api_v1_episodes_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Query"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpisodeListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/episodes/{episode_id}": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Get one episode",
+        "operationId": "get_episode_api_v1_episodes__episode_id__get",
+        "parameters": [
+          {
+            "name": "episode_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Episode / task ID",
+              "title": "Episode Id"
+            },
+            "description": "Episode / task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpisodeDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Move an episode to another project",
+        "operationId": "update_episode_api_v1_episodes__episode_id__patch",
+        "parameters": [
+          {
+            "name": "episode_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Episode / task ID",
+              "title": "Episode Id"
+            },
+            "description": "Episode / task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpisodeUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpisodeUpdateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/episodes/{episode_id}/scenes": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "List an episode's scenes",
+        "operationId": "get_scenes_api_v1_episodes__episode_id__scenes_get",
+        "parameters": [
+          {
+            "name": "episode_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Episode / task ID",
+              "title": "Episode Id"
+            },
+            "description": "Episode / task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/episodes/{episode_id}/assets": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "List an episode's source materials",
+        "operationId": "get_assets_api_v1_episodes__episode_id__assets_get",
+        "parameters": [
+          {
+            "name": "episode_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Episode / task ID",
+              "title": "Episode Id"
+            },
+            "description": "Episode / task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/episodes/{episode_id}/renders": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "List an episode's finished videos",
+        "operationId": "get_renders_api_v1_episodes__episode_id__renders_get",
+        "parameters": [
+          {
+            "name": "episode_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Episode / task ID",
+              "title": "Episode Id"
+            },
+            "description": "Episode / task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}/logs": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Read a task's captured logs",
+        "description": "Logs are an in-memory ring buffer in the process that ran the task\n(`app/services/task_logs.py`), capped at the 20 most recent tasks. A task\nstarted in a different process -- the Streamlit page, say -- has no logs\nhere, and neither does one whose buffer has since been evicted. Both cases\nreturn an empty list rather than a 404.",
+        "operationId": "get_task_logs_api_v1_tasks__task_id__logs_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Task ID",
+              "title": "Task Id"
+            },
+            "description": "Task ID"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskLogResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssetData": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": "material"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": ""
+          },
+          "search_term": {
+            "type": "string",
+            "title": "Search Term",
+            "default": ""
+          },
+          "duration_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration S"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_name"
+        ],
+        "title": "AssetData"
+      },
+      "AssetListData": {
+        "properties": {
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetData"
+            },
+            "type": "array",
+            "title": "Assets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assets"
+        ],
+        "title": "AssetListData"
+      },
+      "AssetListResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AssetListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "AssetListResponse"
+      },
+      "AudioRequest": {
+        "properties": {
+          "video_script": {
+            "type": "string",
+            "title": "Video Script"
+          },
+          "video_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Language",
+            "default": ""
+          },
+          "voice_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Name",
+            "default": "zh-CN-XiaoxiaoNeural-Female"
+          },
+          "voice_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Volume",
+            "default": 1.0
+          },
+          "voice_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Rate",
+            "default": 1.2
+          },
+          "bgm_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm Type",
+            "default": "random"
+          },
+          "bgm_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm File",
+            "default": ""
+          },
+          "bgm_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm Volume",
+            "default": 0.2
+          },
+          "video_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Source",
+            "default": "local"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_script"
+        ],
+        "title": "AudioRequest"
+      },
+      "BgmRetrieveData": {
+        "properties": {
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/FileData"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "BgmRetrieveData"
+      },
+      "BgmRetrieveResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BgmRetrieveData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BgmRetrieveResponse",
+        "example": {
+          "data": {
+            "files": [
+              {
+                "file": "4fca18fce7344f3aa824777a40d45c8c.mp3",
+                "name": "4fca18fce7344f3aa824777a40d45c8c.mp3",
+                "size": 1891269
+              }
+            ]
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "BgmUploadData": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "BgmUploadData"
+      },
+      "BgmUploadResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BgmUploadData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BgmUploadResponse",
+        "example": {
+          "data": {
+            "file": "4fca18fce7344f3aa824777a40d45c8c.mp3"
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "Body_upload_bgm_file_api_v1_musics_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_bgm_file_api_v1_musics_post"
+      },
+      "Body_upload_video_material_file_api_v1_video_materials_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_video_material_file_api_v1_video_materials_post"
+      },
+      "EpisodeDetailData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "default": ""
+          },
+          "script": {
+            "type": "string",
+            "title": "Script",
+            "default": ""
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params",
+            "default": {}
+          },
+          "run_data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Run Data",
+            "default": {}
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "default": 0
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "project_id"
+        ],
+        "title": "EpisodeDetailData"
+      },
+      "EpisodeDetailResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EpisodeDetailData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EpisodeDetailResponse"
+      },
+      "EpisodeListData": {
+        "properties": {
+          "episodes": {
+            "items": {
+              "$ref": "#/components/schemas/EpisodeSummary"
+            },
+            "type": "array",
+            "title": "Episodes"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "episodes",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "EpisodeListData"
+      },
+      "EpisodeListResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EpisodeListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EpisodeListResponse"
+      },
+      "EpisodeSummary": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "default": 0
+          },
+          "mtime": {
+            "type": "number",
+            "title": "Mtime"
+          },
+          "video_url": {
+            "type": "string",
+            "title": "Video Url",
+            "default": ""
+          },
+          "has_restore_data": {
+            "type": "boolean",
+            "title": "Has Restore Data",
+            "default": false
+          },
+          "cross_post_state": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Post State"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "task_id",
+          "subject",
+          "mtime"
+        ],
+        "title": "EpisodeSummary",
+        "description": "列表行。与 WebUI 任务面板使用的字段一致，只是路径换成了 URL。"
+      },
+      "EpisodeUpdateRequest": {
+        "properties": {
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "EpisodeUpdateRequest"
+      },
+      "EpisodeUpdateResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "EpisodeUpdateResponse"
+      },
+      "FileData": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          },
+          "file": {
+            "type": "string",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "size",
+          "file"
+        ],
+        "title": "FileData"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MaterialInfo": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": "pexels"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "duration": {
+            "type": "integer",
+            "title": "Duration",
+            "default": 0
+          },
+          "source_info": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Info"
+          }
+        },
+        "type": "object",
+        "title": "MaterialInfo"
+      },
+      "ProjectCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ProjectCreateRequest"
+      },
+      "ProjectCreateResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProjectData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProjectCreateResponse"
+      },
+      "ProjectData": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "episodes": {
+            "type": "integer",
+            "title": "Episodes",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ProjectData"
+      },
+      "ProjectListData": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectData"
+            },
+            "type": "array",
+            "title": "Projects"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projects"
+        ],
+        "title": "ProjectListData"
+      },
+      "ProjectListResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProjectListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProjectListResponse"
+      },
+      "RenderData": {
+        "properties": {
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_name",
+          "url"
+        ],
+        "title": "RenderData"
+      },
+      "RenderListData": {
+        "properties": {
+          "renders": {
+            "items": {
+              "$ref": "#/components/schemas/RenderData"
+            },
+            "type": "array",
+            "title": "Renders"
+          }
+        },
+        "type": "object",
+        "required": [
+          "renders"
+        ],
+        "title": "RenderListData"
+      },
+      "RenderListResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RenderListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "RenderListResponse"
+      },
+      "SceneData": {
+        "properties": {
+          "idx": {
+            "type": "integer",
+            "title": "Idx"
+          },
+          "narration": {
+            "type": "string",
+            "title": "Narration",
+            "default": ""
+          },
+          "search_term": {
+            "type": "string",
+            "title": "Search Term",
+            "default": ""
+          },
+          "start_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Ms"
+          },
+          "end_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "idx"
+        ],
+        "title": "SceneData"
+      },
+      "SceneListData": {
+        "properties": {
+          "scenes": {
+            "items": {
+              "$ref": "#/components/schemas/SceneData"
+            },
+            "type": "array",
+            "title": "Scenes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenes"
+        ],
+        "title": "SceneListData"
+      },
+      "SceneListResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SceneListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SceneListResponse"
+      },
+      "SubtitleRequest": {
+        "properties": {
+          "video_script": {
+            "type": "string",
+            "title": "Video Script"
+          },
+          "video_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Language",
+            "default": ""
+          },
+          "voice_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Name",
+            "default": "zh-CN-XiaoxiaoNeural-Female"
+          },
+          "voice_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Volume",
+            "default": 1.0
+          },
+          "voice_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Rate",
+            "default": 1.2
+          },
+          "bgm_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm Type",
+            "default": "random"
+          },
+          "bgm_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm File",
+            "default": ""
+          },
+          "bgm_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm Volume",
+            "default": 0.2
+          },
+          "subtitle_position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitle Position",
+            "default": "bottom"
+          },
+          "subtitle_display_mode": {
+            "type": "string",
+            "enum": [
+              "sentence",
+              "word_by_word"
+            ],
+            "title": "Subtitle Display Mode",
+            "default": "sentence"
+          },
+          "subtitle_animation": {
+            "type": "string",
+            "enum": [
+              "none",
+              "pop_spring"
+            ],
+            "title": "Subtitle Animation",
+            "default": "none"
+          },
+          "font_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Font Name",
+            "default": "STHeitiMedium.ttc"
+          },
+          "text_fore_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Fore Color",
+            "default": "#FFFFFF"
+          },
+          "text_background_color": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Text Background Color",
+            "default": false
+          },
+          "rounded_subtitle_background": {
+            "type": "boolean",
+            "title": "Rounded Subtitle Background",
+            "default": false
+          },
+          "font_size": {
+            "type": "integer",
+            "title": "Font Size",
+            "default": 60
+          },
+          "stroke_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stroke Color",
+            "default": "#000000"
+          },
+          "stroke_width": {
+            "type": "number",
+            "title": "Stroke Width",
+            "default": 1.5
+          },
+          "video_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Source",
+            "default": "local"
+          },
+          "subtitle_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitle Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_script"
+        ],
+        "title": "SubtitleRequest"
+      },
+      "TaskDeletionResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "TaskDeletionResponse",
+        "example": {
+          "message": "success",
+          "status": 200
+        }
+      },
+      "TaskListData": {
+        "properties": {
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskStatusData"
+            },
+            "type": "array",
+            "title": "Tasks"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tasks",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "TaskListData",
+        "description": "分页任务列表结构。"
+      },
+      "TaskListResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "TaskListResponse",
+        "description": "任务列表使用独立响应模型，避免与单任务查询混用文档结构。",
+        "example": {
+          "data": {
+            "page": 1,
+            "page_size": 10,
+            "tasks": [
+              {
+                "progress": 50,
+                "state": 4,
+                "task_id": "6c85c8cc-a77a-42b9-bc30-947815aa0558"
+              }
+            ],
+            "total": 1
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "TaskLogData": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "logs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Logs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "logs"
+        ],
+        "title": "TaskLogData"
+      },
+      "TaskLogResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskLogData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "TaskLogResponse"
+      },
+      "TaskQueryResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskStatusData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "TaskQueryResponse",
+        "description": "任务查询会返回生成状态和可选的跨平台发布状态。\n\n生成失败时包含 `failed_stage` 和 `error`；生成完成后如果启用了自动发布，\n`cross_post_state` 会依次进入 pending、processing、complete 或 failed。",
+        "examples": [
+          {
+            "data": {
+              "cross_post_results": [
+                {
+                  "success": true
+                }
+              ],
+              "cross_post_state": "complete",
+              "progress": 100,
+              "state": 1,
+              "task_id": "6c85c8cc-a77a-42b9-bc30-947815aa0558",
+              "videos": [
+                "/tasks/example/final-1.mp4"
+              ]
+            },
+            "message": "success",
+            "status": 200
+          },
+          {
+            "data": {
+              "error": "TTS request timed out",
+              "failed_stage": "audio",
+              "progress": 30,
+              "state": -1,
+              "task_id": "6c85c8cc-a77a-42b9-bc30-947815aa0558"
+            },
+            "message": "success",
+            "status": 200
+          }
+        ]
+      },
+      "TaskResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskResponseData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "TaskResponse",
+        "example": {
+          "data": {
+            "task_id": "6c85c8cc-a77a-42b9-bc30-947815aa0558"
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "TaskResponseData": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id"
+        ],
+        "title": "TaskResponseData"
+      },
+      "TaskStatusData": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "default": 0
+          },
+          "videos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videos"
+          },
+          "combined_videos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Combined Videos"
+          },
+          "failed_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed Stage"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "cross_post_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "processing",
+                  "complete",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Post State"
+          },
+          "cross_post_results": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Post Results"
+          },
+          "cross_post_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Post Error"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "task_id"
+        ],
+        "title": "TaskStatusData",
+        "description": "任务查询对外保证的稳定字段；历史和扩展字段继续原样透传。"
+      },
+      "TaskVideoRequest": {
+        "properties": {
+          "video_subject": {
+            "type": "string",
+            "title": "Video Subject"
+          },
+          "video_script": {
+            "type": "string",
+            "title": "Video Script",
+            "default": ""
+          },
+          "video_terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Terms"
+          },
+          "video_aspect": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoAspect"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "9:16"
+          },
+          "video_fit_mode": {
+            "$ref": "#/components/schemas/VideoFitMode",
+            "default": "cover"
+          },
+          "video_concat_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoConcatMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "random"
+          },
+          "video_transition_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoTransitionMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "video_clip_duration": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Video Clip Duration",
+            "default": 5
+          },
+          "video_clip_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Clip Speed",
+            "default": 1.0
+          },
+          "match_materials_to_script": {
+            "type": "boolean",
+            "title": "Match Materials To Script",
+            "default": false
+          },
+          "video_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Video Count",
+            "default": 1
+          },
+          "video_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Source",
+            "default": "pexels"
+          },
+          "video_materials": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MaterialInfo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Materials"
+          },
+          "custom_audio_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Audio File"
+          },
+          "video_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Language",
+            "default": ""
+          },
+          "voice_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Name",
+            "default": ""
+          },
+          "voice_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Volume",
+            "default": 1.0
+          },
+          "voice_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Rate",
+            "default": 1.0
+          },
+          "bgm_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm Type",
+            "default": "random"
+          },
+          "bgm_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm File",
+            "default": ""
+          },
+          "bgm_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bgm Volume",
+            "default": 0.2
+          },
+          "video_music_prompt": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Video Music Prompt",
+            "default": ""
+          },
+          "sonilo_bgm_prompt": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Sonilo Bgm Prompt",
+            "default": ""
+          },
+          "subtitle_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitle Enabled",
+            "default": true
+          },
+          "subtitle_position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitle Position",
+            "default": "bottom"
+          },
+          "subtitle_display_mode": {
+            "type": "string",
+            "enum": [
+              "sentence",
+              "word_by_word"
+            ],
+            "title": "Subtitle Display Mode",
+            "default": "sentence"
+          },
+          "subtitle_animation": {
+            "type": "string",
+            "enum": [
+              "none",
+              "pop_spring"
+            ],
+            "title": "Subtitle Animation",
+            "default": "none"
+          },
+          "custom_position": {
+            "type": "number",
+            "title": "Custom Position",
+            "default": 70.0
+          },
+          "font_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Font Name",
+            "default": "STHeitiMedium.ttc"
+          },
+          "text_fore_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Fore Color",
+            "default": "#FFFFFF"
+          },
+          "text_background_color": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Text Background Color",
+            "default": false
+          },
+          "rounded_subtitle_background": {
+            "type": "boolean",
+            "title": "Rounded Subtitle Background",
+            "default": false
+          },
+          "font_size": {
+            "type": "integer",
+            "title": "Font Size",
+            "default": 60
+          },
+          "stroke_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stroke Color",
+            "default": "#000000"
+          },
+          "stroke_width": {
+            "type": "number",
+            "title": "Stroke Width",
+            "default": 1.5
+          },
+          "n_threads": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Threads",
+            "default": 2
+          },
+          "paragraph_number": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Paragraph Number",
+            "default": 1
+          },
+          "video_script_prompt": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Video Script Prompt",
+            "default": ""
+          },
+          "custom_system_prompt": {
+            "type": "string",
+            "maxLength": 8000,
+            "title": "Custom System Prompt",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_subject"
+        ],
+        "title": "TaskVideoRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VideoAspect": {
+        "type": "string",
+        "enum": [
+          "16:9",
+          "9:16",
+          "1:1"
+        ],
+        "title": "VideoAspect"
+      },
+      "VideoConcatMode": {
+        "type": "string",
+        "enum": [
+          "random",
+          "sequential"
+        ],
+        "title": "VideoConcatMode"
+      },
+      "VideoFitMode": {
+        "type": "string",
+        "enum": [
+          "cover",
+          "contain"
+        ],
+        "title": "VideoFitMode",
+        "description": "How source clips with a different aspect ratio fill the output canvas."
+      },
+      "VideoMaterialRetrieveData": {
+        "properties": {
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/FileData"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "VideoMaterialRetrieveData"
+      },
+      "VideoMaterialRetrieveResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/VideoMaterialRetrieveData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "VideoMaterialRetrieveResponse",
+        "example": {
+          "data": {
+            "files": [
+              {
+                "file": "/MoneyPrinterTurbo/resource/videos/example.mp4",
+                "name": "example.mp4",
+                "size": 12345678
+              }
+            ]
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "VideoMaterialUploadData": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "VideoMaterialUploadData"
+      },
+      "VideoMaterialUploadResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/VideoMaterialUploadData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "VideoMaterialUploadResponse",
+        "example": {
+          "data": {
+            "file": "/MoneyPrinterTurbo/resource/videos/example.mp4"
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "VideoScriptData": {
+        "properties": {
+          "video_script": {
+            "type": "string",
+            "title": "Video Script"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_script"
+        ],
+        "title": "VideoScriptData"
+      },
+      "VideoScriptRequest": {
+        "properties": {
+          "video_subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Subject",
+            "default": "春天的花海"
+          },
+          "video_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Language",
+            "default": ""
+          },
+          "paragraph_number": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Paragraph Number",
+            "default": 1
+          },
+          "video_script_prompt": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Video Script Prompt",
+            "default": ""
+          },
+          "custom_system_prompt": {
+            "type": "string",
+            "maxLength": 8000,
+            "title": "Custom System Prompt",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "VideoScriptRequest"
+      },
+      "VideoScriptResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/VideoScriptData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "VideoScriptResponse",
+        "example": {
+          "data": {
+            "video_script": "春天的花海，是大自然的一幅美丽画卷。在这个季节里，大地复苏，万物生长，花朵争相绽放，形成了一片五彩斑斓的花海..."
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "VideoSocialMetadataData": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "caption": {
+            "type": "string",
+            "title": "Caption"
+          },
+          "hashtags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hashtags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "caption",
+          "hashtags"
+        ],
+        "title": "VideoSocialMetadataData"
+      },
+      "VideoSocialMetadataRequest": {
+        "properties": {
+          "video_subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Subject",
+            "default": "A day in Shanghai"
+          },
+          "video_script": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Script",
+            "default": ""
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "default": "auto"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform",
+            "default": "tiktok"
+          }
+        },
+        "type": "object",
+        "title": "VideoSocialMetadataRequest"
+      },
+      "VideoSocialMetadataResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/VideoSocialMetadataData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "VideoSocialMetadataResponse",
+        "example": {
+          "data": {
+            "caption": "Save this quick Shanghai inspiration and follow for more short travel ideas.",
+            "hashtags": [
+              "#shorts",
+              "#travel",
+              "#shanghai",
+              "#viral",
+              "#fyp"
+            ],
+            "title": "A Day in Shanghai You Should Not Miss"
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "VideoTermsData": {
+        "properties": {
+          "video_terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Video Terms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_terms"
+        ],
+        "title": "VideoTermsData"
+      },
+      "VideoTermsRequest": {
+        "properties": {
+          "video_subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Subject",
+            "default": "春天的花海"
+          },
+          "video_script": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Script",
+            "default": "春天的花海，如诗如画般展现在眼前。万物复苏的季节里，大地披上了一袭绚丽多彩的盛装。金黄的迎春、粉嫩的樱花、洁白的梨花、艳丽的郁金香……"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "default": 5
+          },
+          "match_materials_to_script": {
+            "type": "boolean",
+            "title": "Match Materials To Script",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "VideoTermsRequest"
+      },
+      "VideoTermsResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/VideoTermsData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "VideoTermsResponse",
+        "example": {
+          "data": {
+            "video_terms": [
+              "sky",
+              "tree"
+            ]
+          },
+          "message": "success",
+          "status": 200
+        }
+      },
+      "VideoTransitionMode": {
+        "type": "string",
+        "enum": [
+          "None",
+          "Shuffle",
+          "FadeIn",
+          "FadeOut",
+          "SlideIn",
+          "SlideOut",
+          "ZoomIn",
+          "ZoomOut"
+        ],
+        "title": "VideoTransitionMode"
+      }
+    }
+  }
+}

@@ -292,7 +292,9 @@ class TaskStatusData(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     task_id: str
-    state: int
+    # NULL 是合法状态：导入的历史任务没有状态，WebUI 把它们归入 "history"。
+    # 写死成 int 会让 /api/v1/tasks 在真实库上直接 500。
+    state: Optional[int] = None
     progress: int = 0
     videos: Optional[List[str]] = None
     combined_videos: Optional[List[str]] = None
@@ -569,3 +571,137 @@ class VideoMaterialUploadResponse(BaseResponse):
             },
         }
     )
+
+
+# ---- LIBRARY ----
+# 这些模型对应 app/services/library.py 的读取接口。服务层返回的 task_path /
+# video_file 是服务端绝对路径，控制器会在这里之前转换成 /tasks/... URL。
+class ProjectData(BaseModel):
+    id: int
+    name: str
+    episodes: int = 0
+
+
+class ProjectListData(BaseModel):
+    projects: List[ProjectData]
+
+
+class ProjectListResponse(BaseResponse):
+    data: ProjectListData
+
+
+class ProjectCreateRequest(BaseModel):
+    name: str
+
+
+class ProjectCreateResponse(BaseResponse):
+    data: ProjectData
+
+
+class EpisodeSummary(BaseModel):
+    """列表行。与 WebUI 任务面板使用的字段一致，只是路径换成了 URL。"""
+
+    model_config = ConfigDict(extra="allow")
+
+    task_id: str
+    subject: str
+    state: Optional[int] = None
+    progress: int = 0
+    mtime: float
+    video_url: str = ""
+    has_restore_data: bool = False
+    cross_post_state: Optional[Any] = None
+
+
+class EpisodeListData(BaseModel):
+    episodes: List[EpisodeSummary]
+    total: int
+    limit: int
+    offset: int
+
+
+class EpisodeListResponse(BaseResponse):
+    data: EpisodeListData
+
+
+class EpisodeDetailData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    project_id: int
+    title: str = ""
+    topic: str = ""
+    script: str = ""
+    params: dict = {}
+    run_data: dict = {}
+    state: Optional[int] = None
+    progress: int = 0
+
+
+class EpisodeDetailResponse(BaseResponse):
+    data: EpisodeDetailData
+
+
+class SceneData(BaseModel):
+    idx: int
+    narration: str = ""
+    search_term: str = ""
+    start_ms: Optional[int] = None
+    end_ms: Optional[int] = None
+
+
+class SceneListData(BaseModel):
+    scenes: List[SceneData]
+
+
+class SceneListResponse(BaseResponse):
+    data: SceneListData
+
+
+class AssetData(BaseModel):
+    kind: str = "material"
+    file_name: str
+    provider: str = ""
+    search_term: str = ""
+    duration_s: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+
+class AssetListData(BaseModel):
+    assets: List[AssetData]
+
+
+class AssetListResponse(BaseResponse):
+    data: AssetListData
+
+
+class RenderData(BaseModel):
+    file_name: str
+    url: str
+    size_bytes: Optional[int] = None
+
+
+class RenderListData(BaseModel):
+    renders: List[RenderData]
+
+
+class RenderListResponse(BaseResponse):
+    data: RenderListData
+
+
+class EpisodeUpdateRequest(BaseModel):
+    project_id: int
+
+
+class EpisodeUpdateResponse(BaseResponse):
+    data: None = None
+
+
+class TaskLogData(BaseModel):
+    task_id: str
+    logs: List[str]
+
+
+class TaskLogResponse(BaseResponse):
+    data: TaskLogData

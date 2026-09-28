@@ -1,3 +1,14 @@
+# The React UI is built in its own stage: the runtime image is python:slim and
+# carries no Node. Only web/dist crosses into it, so node_modules never ships.
+# This stage is skipped entirely when web/ has no package.json.
+FROM node:22-alpine AS web-build
+WORKDIR /web
+RUN corepack enable
+COPY web/package.json web/pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
+COPY web/ ./
+RUN pnpm build
+
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim-bullseye
 
@@ -93,6 +104,10 @@ RUN if [ "$PIP_USE_OFFICIAL" = "1" ]; then \
 
 # Now copy the rest of the codebase into the image
 COPY . .
+
+# app/asgi.py serves web/dist when it exists, so the API container gets the
+# React UI on / and falls back to resource/public when this is absent.
+COPY --from=web-build /web/dist ./web/dist
 
 # Expose the port the app runs on
 EXPOSE 8501

@@ -1,6 +1,3 @@
-import threading
-from collections import deque
-
 from loguru import logger
 
 from app.config import config
@@ -9,8 +6,8 @@ from app.models import const
 from app.models.schema import VideoParams
 from app.services import state as sm
 from app.services import task as tm
+from app.services import task_logs
 from app.services.loomloom import LoomLoomConfirmedVideoRequest
-from app.utils.logging_utils import format_log_record
 
 
 # WebUI 的配置保存在进程级全局字典中。原来的同步实现会在完整生成期间持有
@@ -20,34 +17,13 @@ _task_manager = InMemoryTaskManager(
     max_concurrent_tasks=1,
     max_queued_tasks=max(1, int(config.app.get("max_queued_tasks", 100))),
 )
-_task_logs: dict[str, deque[str]] = {}
-_task_logs_lock = threading.RLock()
-_MAX_LOG_TASKS = 20
-_MAX_LOG_RECORDS_PER_TASK = 1000
-# Streamlit 无法由后台线程直接推送组件更新，只能通过 Fragment 轮询。0.5 秒
-# 足以让 WebUI 日志接近终端实时输出，又不会像高频刷新那样持续占用浏览器资源。
-TASK_LOG_REFRESH_INTERVAL_SECONDS = 0.5
-
-
-def _append_task_log(task_id: str, message: str) -> None:
-    """按任务保存有限数量的日志，供 Streamlit Fragment 安全轮询。"""
-    with _task_logs_lock:
-        records = _task_logs.get(task_id)
-        if records is None:
-            # 只保留最近任务的日志，避免 WebUI 服务长时间运行后持续占用内存。
-            # dict 保持插入顺序；任务日志仅用于界面诊断，淘汰最早记录不影响任务。
-            if len(_task_logs) >= _MAX_LOG_TASKS:
-                oldest_task_id = next(iter(_task_logs))
-                _task_logs.pop(oldest_task_id, None)
-            records = deque(maxlen=_MAX_LOG_RECORDS_PER_TASK)
-            _task_logs[task_id] = records
-        records.append(message.rstrip())
-
-
-def get_task_logs(task_id: str) -> list[str]:
-    """返回日志快照，避免页面渲染期间持有后台线程使用的锁。"""
-    with _task_logs_lock:
-        return list(_task_logs.get(task_id, ()))
+# 日志缓冲区现在归流水线所有（app/services/task_logs.py），API 与 CLI 启动的
+# 任务才能拿到同样的日志。这里保留原有名字，页面与既有测试无需改动。
+_task_logs = task_logs._task_logs
+_task_logs_lock = task_logs._task_logs_lock
+TASK_LOG_REFRESH_INTERVAL_SECONDS = task_logs.TASK_LOG_REFRESH_INTERVAL_SECONDS
+_append_task_log = task_logs.append
+get_task_logs = task_logs.get
 
 
 def _run_generation(
@@ -67,30 +43,22 @@ def _run_generation(
     API 任务或其它页面日志会混入当前任务。页面只读取普通列表快照，不会从后台
     线程访问 Streamlit session_state，从根源上避免刷新时的 delta 路径错乱。
     """
-    log_handler_id = None
-    worker_thread_id = threading.get_ident()
     try:
-        if capture_logs:
-            log_handler_id = logger.add(
-                lambda message: _append_task_log(task_id, str(message)),
-                level="DEBUG",
-                format=format_log_record,
-                colorize=False,
-                filter=lambda record: record["thread"].id == worker_thread_id,
-            )
-
+        # capture 在这里而不是只在 tm.start 里，是为了让 capture_logs=False
+        # 仍然能关掉采集：内层 tm.start 的 capture 看到本线程已有归属就不再注册。
         # 完整任务仍使用原来的配置锁，防止另一个 WebUI 会话在生成中途修改
         # Provider、密钥等进程级配置，造成同一条视频前后使用不同设置。
-        with config.runtime_config_lock():
-            return tm.start(
-                task_id=task_id,
-                params=params,
-                voice_preview=voice_preview,
-                loomloom_video_request=loomloom_video_request,
-                voxcpm_reference_audio=voxcpm_reference_audio,
-                voxcpm_prompt_audio=voxcpm_prompt_audio,
-                voxcpm_prompt_text=voxcpm_prompt_text,
-            )
+        with task_logs.capture(task_id, enabled=capture_logs):
+            with config.runtime_config_lock():
+                return tm.start(
+                    task_id=task_id,
+                    params=params,
+                    voice_preview=voice_preview,
+                    loomloom_video_request=loomloom_video_request,
+                    voxcpm_reference_audio=voxcpm_reference_audio,
+                    voxcpm_prompt_audio=voxcpm_prompt_audio,
+                    voxcpm_prompt_text=voxcpm_prompt_text,
+                )
     except Exception as exc:
         # tm.start 已负责把流水线异常转换成失败状态；这里额外保护日志 sink、
         # 配置锁等 WebUI 包装层。任何后台线程异常都必须留下终态，不能让任务
@@ -115,14 +83,6 @@ def _run_generation(
             f"task_id={task_id}, error={exc}"
         )
         return failure
-    finally:
-        if log_handler_id is not None:
-            try:
-                logger.remove(log_handler_id)
-            except ValueError:
-                logger.debug(
-                    f"WebUI task log handler already removed: task_id={task_id}"
-                )
 
 
 def submit_generation(

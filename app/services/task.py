@@ -27,6 +27,7 @@ from app.services import (
     sonilo,
     subtitle,
     task_artifacts,
+    task_logs,
     twelvelabs,
     video,
     volcengine_seedance,
@@ -1760,17 +1761,20 @@ def start(
     默认值，让自定义音频始终受当前任务目录约束。
     """
     try:
-        return _run_pipeline(
-            task_id,
-            params,
-            stop_at=stop_at,
-            voice_preview=voice_preview,
-            loomloom_video_request=loomloom_video_request,
-            allow_server_file_input=allow_server_file_input,
-            voxcpm_reference_audio=voxcpm_reference_audio,
-            voxcpm_prompt_audio=voxcpm_prompt_audio,
-            voxcpm_prompt_text=voxcpm_prompt_text,
-        )
+        # 日志采集放在这里，API、CLI 与 WebUI 才能拿到同样的任务日志。
+        # capture 可重入，WebUI worker 已开启时这里不会重复注册 sink。
+        with task_logs.capture(task_id):
+            return _run_pipeline(
+                task_id,
+                params,
+                stop_at=stop_at,
+                voice_preview=voice_preview,
+                loomloom_video_request=loomloom_video_request,
+                allow_server_file_input=allow_server_file_input,
+                voxcpm_reference_audio=voxcpm_reference_audio,
+                voxcpm_prompt_audio=voxcpm_prompt_audio,
+                voxcpm_prompt_text=voxcpm_prompt_text,
+            )
     except Exception as exc:
         logger.exception(
             f"unexpected task pipeline failure, task_id: {task_id}, error: {exc}"

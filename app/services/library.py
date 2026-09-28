@@ -109,13 +109,12 @@ def _row_to_summary(row: dict) -> dict:
     }
 
 
-def list_episodes(
-    limit: int = 50,
-    offset: int = 0,
-    project_id: int | None = None,
-    query: str = "",
-) -> list[dict]:
-    """Most recently touched first, optionally filtered by project and search."""
+def _episode_filter(project_id: int | None, query: str) -> tuple[str, list[Any]]:
+    """The WHERE clause shared by `list_episodes` and `count_episodes`.
+
+    Kept in one place so a paginated listing can never be filtered differently
+    from the total it is displayed next to.
+    """
     where = []
     params: list[Any] = []
     if project_id:
@@ -124,7 +123,31 @@ def list_episodes(
     if query.strip():
         where.append("e.search_doc @@ websearch_to_tsquery('simple', %s)")
         params.append(query.strip())
-    clause = f"WHERE {' AND '.join(where)}" if where else ""
+    return (f"WHERE {' AND '.join(where)}" if where else ""), params
+
+
+def count_episodes(project_id: int | None = None, query: str = "") -> int:
+    """How many episodes match, for paginating clients that need a page count."""
+    clause, params = _episode_filter(project_id, query)
+    try:
+        with db.connection() as conn:
+            row = conn.execute(
+                f"SELECT count(*) AS n FROM episode e {clause}", tuple(params)
+            ).fetchone()
+    except Exception as e:
+        logger.error(f"failed to count episodes: {type(e).__name__}: {e}")
+        return 0
+    return int(row["n"]) if row else 0
+
+
+def list_episodes(
+    limit: int = 50,
+    offset: int = 0,
+    project_id: int | None = None,
+    query: str = "",
+) -> list[dict]:
+    """Most recently touched first, optionally filtered by project and search."""
+    clause, params = _episode_filter(project_id, query)
 
     sql = f"""
         SELECT e.id, e.title, e.topic, e.state, e.progress, e.run_data, e.updated_at,

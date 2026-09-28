@@ -112,3 +112,35 @@ class TestTaskStaticFiles(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSinglePageAppFallback(unittest.TestCase):
+    """The React app uses history routing, so deep links must reach index.html."""
+
+    def setUp(self):
+        self.original_app_config = dict(config.app)
+        config.app["api_key"] = ""
+        self.client = TestClient(asgi.app)
+
+    def tearDown(self):
+        config.app.clear()
+        config.app.update(self.original_app_config)
+
+    def test_an_extensionless_path_serves_the_app_shell(self):
+        """
+        `/episodes/<id>` is a client-side route with no file behind it. Plain
+        StaticFiles raises a 404 for it, which would break every refresh and
+        every shared link.
+        """
+        response = self.client.get("/episodes/some-task-id")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
+
+    def test_a_missing_asset_still_404s(self):
+        """Only routes fall back; a mistyped bundle must not answer with HTML."""
+        self.assertEqual(self.client.get("/assets/does-not-exist.js").status_code, 404)
+
+    def test_api_routes_win_over_the_catch_all_mount(self):
+        """The mount is registered last so it cannot shadow the routers."""
+        self.assertEqual(self.client.get("/ping").json(), "pong")
+        self.assertEqual(self.client.get("/openapi.json").status_code, 200)

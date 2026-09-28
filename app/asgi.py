@@ -1,6 +1,7 @@
 """Application implementation - ASGI."""
 
 import os
+import pathlib
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
@@ -9,6 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from loguru import logger
 
 from app.config import config
@@ -284,5 +286,39 @@ configure_browser_access(app, cors_allowed_origins)
 task_dir = utils.task_dir()
 app.mount("/tasks", StaticFiles(directory=task_dir, html=True), name="")
 
-public_dir = utils.public_dir()
-app.mount("/", StaticFiles(directory=public_dir, html=True), name="")
+class SinglePageApp(StaticFiles):
+    """StaticFiles that serves index.html for unknown paths.
+
+    The React app uses history routing, so `/episodes/<id>` is a real URL a
+    browser can be pointed at directly. Plain StaticFiles 404s those because no
+    such file exists; only genuinely missing assets should 404.
+    """
+
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exception:
+            # StaticFiles raises rather than returning a 404 response, so this
+            # has to be caught, not inspected. A path with a file extension is
+            # a genuinely missing asset and keeps its 404; an extensionless one
+            # is a client-side route.
+            if exception.status_code != 404 or pathlib.PurePosixPath(path).suffix:
+                raise
+            return await super().get_response("index.html", scope)
+
+
+def _web_root() -> str:
+    """The built React app if it exists, otherwise the legacy public folder.
+
+    A checkout that has never run `pnpm build` still starts; it just serves
+    resource/public as before.
+    """
+    dist = os.path.join(utils.root_dir(), "web", "dist")
+    if os.path.isfile(os.path.join(dist, "index.html")):
+        logger.info(f"serving the web UI from {dist}")
+        return dist
+    return utils.public_dir()
+
+
+# 必须放在所有路由之后：StaticFiles 挂在 "/" 上会兜住未匹配的路径。
+app.mount("/", SinglePageApp(directory=_web_root(), html=True), name="")

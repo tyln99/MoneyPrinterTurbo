@@ -34,7 +34,7 @@ from app.services import bgm as bgm_service
 from app.services import material_upload as material_upload_service
 from app.services import state as sm
 from app.services import task as tm
-from app.utils import file_security, utils
+from app.utils import file_security, task_uri, utils
 
 # 统一在 V1 视频路由入口执行鉴权。verify_token 会在 api_key 为空时
 # 保留现有免认证行为，只有管理员显式配置后才会影响客户端。
@@ -104,29 +104,8 @@ def _public_task_data(task: dict) -> dict:
     return public_task
 
 
-def _task_file_to_uri(file: str, endpoint: str, task_dir: str, request_id: str) -> str:
-    if not isinstance(file, str):
-        return file
-
-    if file.startswith(("http://", "https://")):
-        return file
-
-    try:
-        resolved_path = file_security.resolve_path_within_directory(task_dir, file)
-    except ValueError as exc:
-        # 任务状态理论上只应保存任务目录内的产物路径。这里不再继续拼接 URL，
-        # 避免把异常路径包装成可访问链接；同时保留原值，便于排查历史脏数据。
-        logger.warning(
-            f"skip unsafe task output path, request_id: {request_id}, path: {file}, "
-            f"error: {str(exc)}"
-        )
-        return file
-
-    relative_path = os.path.relpath(resolved_path, task_dir).replace("\\", "/")
-    uri_path = f"tasks/{relative_path}"
-    if endpoint:
-        return f"{endpoint.rstrip('/')}/{uri_path}"
-    return f"/{uri_path}"
+# 实现已移到 app/utils/task_uri.py，让 library 路由复用同一份转换逻辑。
+_task_file_to_uri = task_uri.task_file_to_uri
 
 
 def _parse_byte_range(
