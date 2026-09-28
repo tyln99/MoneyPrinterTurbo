@@ -29,13 +29,18 @@ class TestWebuiSubtitleSource(unittest.TestCase):
 
     def _run(self, *, subtitle_provider="edge", voice_mode="tts"):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=90)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = LOCALE
         # The voice panel renders before the subtitle panel, so seeding the widget
         # state here is enough to reproduce a given combination.
         app.session_state[f"voice_mode_control_{LOCALE}"] = voice_mode
         test_app_config = dict(config.app, subtitle_provider=subtitle_provider)
+        # The warning only applies when subtitles are on, so the test states that
+        # rather than inheriting whatever the developer last set in the UI.
+        test_ui_config = dict(config.ui, subtitle_enabled=True)
         with (
             patch.object(config, "app", test_app_config),
+            patch.object(config, "ui", test_ui_config),
             # A unit test must never write back to the real config.toml at the repo root.
             patch.object(config, "try_save_config", return_value=True),
             patch.object(config, "save_config"),

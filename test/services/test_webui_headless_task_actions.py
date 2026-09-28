@@ -7,12 +7,14 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from app.config import config
+from app.models import const
 
 # webui/Main.py 在导入 app.services.material 时会连带导入 moviepy，而 moviepy 在
 # 导入期就要解析 FFmpeg 可执行文件（依赖 sys.platform 选择平台二进制），numpy 也
 # 会按 sys.platform 决定是否调用 os.uname()。这些解析必须先于下面的 fixture 完成，
 # 否则在 Windows 上模拟无桌面服务器时会去找 Linux 版 FFmpeg 或直接抛 AttributeError。
 from app.services import material as _material  # noqa: F401
+from app.services import library
 from app.services import state as sm
 from app.utils import utils
 
@@ -33,6 +35,26 @@ def headless_task_app(tmp_path, monkeypatch):
 
     monkeypatch.setattr(utils, "task_dir", lambda: str(tasks_dir))
     monkeypatch.setattr(sm.state, "get_all_tasks", lambda *_args, **_kwargs: ([], 0))
+    # The task panel reads the library rather than scanning storage/tasks, so the
+    # fixture seeds a row instead of relying on the directory being discovered.
+    monkeypatch.setattr(
+        library,
+        "list_episodes",
+        lambda *_args, **_kwargs: [
+            {
+                "task_id": "headless-test",
+                "subject": "headless-test",
+                "state": const.TASK_STATE_COMPLETE,
+                "progress": 100,
+                "mtime": 0.0,
+                "task_path": str(task_dir),
+                "video_file": str(video_file),
+                "has_restore_data": False,
+                "cross_post_state": None,
+                "source": "library",
+            }
+        ],
+    )
     monkeypatch.setattr(sys, "platform", "linux")
     monkeypatch.delenv("DISPLAY", raising=False)
     monkeypatch.delenv("WAYLAND_DISPLAY", raising=False)
@@ -41,6 +63,7 @@ def headless_task_app(tmp_path, monkeypatch):
     # 隔离，防止控件初始化意外写入开发者的 config.toml。
     with patch.object(config, "try_save_config", return_value=True):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.run()
         yield app, video_file
 
@@ -50,6 +73,12 @@ def _button_by_key_prefix(app, key_prefix):
 
 
 def test_headless_play_renders_and_closes_browser_preview(headless_task_app):
+    """
+    Play opens the preview modal and dismissing it tears the player down.
+
+    The player used to sit under the table with its own close button; it is now
+    a dialog, so closing runs through on_dismiss rather than a widget click.
+    """
     app, video_file = headless_task_app
 
     _button_by_key_prefix(app, "play_task_all_headless-test").click()
@@ -59,7 +88,8 @@ def test_headless_play_renders_and_closes_browser_preview(headless_task_app):
     assert app.session_state["task_preview_video_file"] == str(video_file.resolve())
     assert len(app.get("video")) == 1
 
-    _button_by_key_prefix(app, "close_task_video_preview").click()
+    # What the dialog's on_dismiss does.
+    del app.session_state["task_preview_video_file"]
     app.run()
 
     assert "task_preview_video_file" not in app.session_state

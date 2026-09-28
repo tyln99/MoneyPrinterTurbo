@@ -27,11 +27,25 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: moneyprinterturbo
+          POSTGRES_PASSWORD: moneyprinterturbo
+          POSTGRES_DB: moneyprinterturbo
+        options: >-
+          --health-cmd "pg_isready -U moneyprinterturbo"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
 
     env:
       MPT_TEST_REDIS_HOST: 127.0.0.1
       MPT_TEST_REDIS_PORT: 6379
       MPT_TEST_REDIS_DB: 15
+      MPT_TEST_DATABASE_URL: postgresql://moneyprinterturbo:moneyprinterturbo@127.0.0.1:5432/moneyprinterturbo
 
     steps:
       - name: Check out repository

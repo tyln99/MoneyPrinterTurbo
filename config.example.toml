@@ -461,6 +461,11 @@ endpoint = ""
 # Example: material_directory = "/path/to/videos"
 material_directory = ""
 
+# PostgreSQL connection string. Required: the task library lives here.
+# Override with MPT_DATABASE_URL, or DATABASE_URL, which is what the
+# docker-compose services set so the host value below can stay "localhost".
+database_url = "postgresql://moneyprinterturbo:moneyprinterturbo@localhost:5432/moneyprinterturbo"
+
 # Optional Redis-backed task state. Keep Redis private to this application;
 # untrusted writers must not be able to modify serialized task records.
 enable_redis = false

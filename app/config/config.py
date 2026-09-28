@@ -585,6 +585,14 @@ app["redis_host"] = os.getenv(
     os.getenv("REDIS_HOST", app.get("redis_host", "localhost")),
 )
 
+# Lives in [app] rather than its own section on purpose: a new _SynchronizedConfig
+# section also has to be listed in save_config(), and omitting that line drops
+# runtime edits silently. One key here needs no save_config change at all.
+app["database_url"] = os.getenv(
+    "MPT_DATABASE_URL",
+    os.getenv("DATABASE_URL", app.get("database_url", "")),
+)
+
 ffmpeg_path = app.get("ffmpeg_path", "")
 if ffmpeg_path and os.path.isfile(ffmpeg_path):
     os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg_path

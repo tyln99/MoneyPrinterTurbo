@@ -1385,7 +1385,19 @@ def _run_pipeline(
     voxcpm_prompt_text: str = "",
 ):
     logger.info(f"start task: {task_id}, stop_at: {stop_at}")
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=5)
+    # Carried through every progress tick. update_task replaces the whole record
+    # rather than merging it (MemoryState assigns a fresh dict), so each call has
+    # to re-send everything produced so far or the earlier stages' output is
+    # dropped. Without this the library shows an empty script until the very last
+    # write, which is exactly when it stops being useful to look at.
+    progress_context = {"video_subject": params.video_subject}
+
+    sm.state.update_task(
+        task_id,
+        state=const.TASK_STATE_PROCESSING,
+        progress=5,
+        **progress_context,
+    )
 
     if (
         stop_at in {"materials", "video"}
@@ -1507,7 +1519,13 @@ def _run_pipeline(
         )
         return _mark_task_failed(task_id, "script", error)
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=10)
+    progress_context["script"] = video_script
+    sm.state.update_task(
+        task_id,
+        state=const.TASK_STATE_PROCESSING,
+        progress=10,
+        **progress_context,
+    )
 
     if stop_at == "script":
         sm.state.update_task(
@@ -1534,7 +1552,13 @@ def _run_pipeline(
         )
         return {"script": video_script, "terms": video_terms}
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=20)
+    progress_context["terms"] = video_terms
+    sm.state.update_task(
+        task_id,
+        state=const.TASK_STATE_PROCESSING,
+        progress=20,
+        **progress_context,
+    )
 
     # 3. Generate audio
     generate_audio_kwargs = {
@@ -1559,7 +1583,13 @@ def _run_pipeline(
             "failed to prepare narration audio",
         )
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=30)
+    progress_context["audio_file"] = audio_file
+    sm.state.update_task(
+        task_id,
+        state=const.TASK_STATE_PROCESSING,
+        progress=30,
+        **progress_context,
+    )
 
     if stop_at == "audio":
         sm.state.update_task(
@@ -1584,7 +1614,13 @@ def _run_pipeline(
         )
         return {"subtitle_path": subtitle_path}
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=40)
+    progress_context["subtitle_path"] = subtitle_path
+    sm.state.update_task(
+        task_id,
+        state=const.TASK_STATE_PROCESSING,
+        progress=40,
+        **progress_context,
+    )
 
     # 5. Get video materials
     downloaded_videos = get_video_materials(
@@ -1610,7 +1646,13 @@ def _run_pipeline(
         )
         return {"materials": downloaded_videos}
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=50)
+    progress_context["materials"] = downloaded_videos
+    sm.state.update_task(
+        task_id,
+        state=const.TASK_STATE_PROCESSING,
+        progress=50,
+        **progress_context,
+    )
 
     # 仅完整视频生成流程才需要处理视频拼接模式；
     # 这样可以避免 /subtitle 和 /audio 这类请求访问不存在的字段。

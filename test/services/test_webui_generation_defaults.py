@@ -25,6 +25,7 @@ def _new_app():
     # full Streamlit entrypoint and optional media stack. Keep the assertion
     # timeout above that one-time startup cost so targeted runs do not flake.
     app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+    app.session_state["app_view"] = "create"
     app.session_state["ui_language"] = "en"
     app.run()
     assert [str(item.value) for item in app.exception] == []

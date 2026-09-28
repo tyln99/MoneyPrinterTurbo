@@ -58,6 +58,7 @@ class TestWebuiBackgroundMusic(unittest.TestCase):
 
     def _open_custom_bgm_panel(self, locale):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         # CI 没有本机 config.toml 中保存的语言。显式覆盖 session locale，既能
         # 复现 CI 的英文默认值，也能保护开发者常用的中文界面回归。
         app.session_state["ui_language"] = locale
@@ -69,6 +70,7 @@ class TestWebuiBackgroundMusic(unittest.TestCase):
 
     def _open_sonilo_bgm_panel(self, locale):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = locale
         app.run()
         source_select = self._widget_by_key(app.selectbox, "bgm_type_select")
@@ -77,6 +79,7 @@ class TestWebuiBackgroundMusic(unittest.TestCase):
 
     def _open_elevenlabs_bgm_panel(self, locale):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = locale
         app.run()
         source_select = self._widget_by_key(app.selectbox, "bgm_type_select")
@@ -85,6 +88,7 @@ class TestWebuiBackgroundMusic(unittest.TestCase):
 
     def _open_preset_bgm_panel(self, locale):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = locale
         app.run()
         source_select = self._widget_by_key(app.selectbox, "bgm_type_select")
@@ -190,6 +194,7 @@ class TestWebuiBackgroundMusic(unittest.TestCase):
                 ),
             ):
                 app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+                app.session_state["app_view"] = "create"
                 app.session_state["ui_language"] = "en"
                 app.session_state["task_restore_payload"] = {
                     "task_id": "preset-bgm-restore-test",
@@ -468,6 +473,7 @@ class TestWebuiBackgroundMusic(unittest.TestCase):
             patch.object(voice, "get_elevenlabs_voices", return_value=[]),
         ):
             app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+            app.session_state["app_view"] = "create"
             app.session_state["ui_language"] = "en"
             app.run()
             self._widget_by_key(

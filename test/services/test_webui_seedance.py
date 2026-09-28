@@ -32,6 +32,7 @@ def test_seedance_source_requires_confirmation_then_submits_without_secret_in_pa
         patch("app.services.webui_task.submit_generation") as submit_generation,
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 

@@ -231,6 +231,7 @@ def test_loomloom_webui_quotes_then_requires_confirmation_before_execute():
         ),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -293,6 +294,7 @@ def test_generated_long_script_autofills_video_count_once_and_shows_shortfall():
         patch.object(llm, "generate_terms", return_value=["robot city"]),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -360,6 +362,7 @@ def test_loomloom_video_source_quotes_then_passes_secret_in_confirmed_request():
         patch("app.services.webui_task.submit_generation") as submit_generation,
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -434,6 +437,7 @@ def test_loomloom_refresh_keeps_unavailable_selection_until_user_changes_it():
         ),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -488,6 +492,7 @@ def test_loomloom_zero_video_quote_warns_about_actual_charges():
         ),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -525,6 +530,7 @@ def test_selected_shengsuanyun_provider_hides_duplicate_loomloom_key_input():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.run()
 
@@ -572,6 +578,7 @@ def test_paused_script_run_keeps_remote_id_until_user_stops_tracking():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.session_state["loomloom_run_id"] = "paid-run-1"
         app.session_state["loomloom_run_error"] = "temporary network failure"

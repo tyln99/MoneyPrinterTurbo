@@ -6,7 +6,6 @@ import mimetypes
 import os
 import re
 import shutil
-import subprocess
 import sys
 import time
 import webbrowser
@@ -46,6 +45,7 @@ from app.models.schema import (
 from app.services import bgm as bgm_service
 from app.services import (
     cache_manager,
+    library,
     llm,
     loomloom,
     material,
@@ -934,107 +934,30 @@ def _task_state_filter_key(task):
     return "history"
 
 
-def _scan_history_tasks(limit=30):
-    tasks_root = utils.task_dir()
-    if not os.path.isdir(tasks_root):
-        return []
+def _collect_task_summaries(limit=20, query="", project_id=None):
+    """
+    Build the task panel rows.
 
-    # 任务管理 fragment 每两秒刷新一次。先只读取低成本的目录元数据并截取最近
-    # 的任务，再解析 script.json 和视频列表，避免历史任务很多时反复扫描全部内容。
-    task_entries = []
-    try:
-        with os.scandir(tasks_root) as entries:
-            for entry in entries:
-                try:
-                    if entry.name.startswith(".") or not entry.is_dir(
-                        follow_symlinks=False
-                    ):
-                        continue
-                    task_entries.append(
-                        (
-                            entry.stat(follow_symlinks=False).st_mtime,
-                            entry.name,
-                            entry.path,
-                        )
-                    )
-                except OSError as e:
-                    # 单个任务目录可能正在被删除，不应因此让整个任务面板失效。
-                    logger.debug(f"skip unavailable task directory: {entry.path}, {e}")
-    except OSError as e:
-        logger.warning(f"failed to scan task directory: {tasks_root}, {e}")
-        return []
+    This used to merge three sources: a directory scan, the state store, and the
+    session-only active list. The scan re-parsed every script.json on a
+    two-second fragment refresh and truncated to 50 entries *before* parsing, so
+    the 51st task was unreachable from the UI by any means. The state store and
+    the library are now the same Postgres table, so both of those layers
+    collapse into one indexed query.
 
-    task_entries.sort(key=lambda item: item[0], reverse=True)
-    tasks = []
-    for mtime, name, task_path in task_entries[:limit]:
-        script_data = _safe_load_task_script(task_path)
-        params_data = script_data.get("params", {}) if script_data else {}
-        video_file = _find_final_task_video(task_path)
-        subject = (
-            params_data.get("video_subject")
-            or script_data.get("script", "")[:40]
-            or name
+    The session overlay stays: it covers the sub-second window between
+    submitting the form and the row existing.
+    """
+    tasks = {
+        task["task_id"]: task
+        for task in library.list_episodes(
+            limit=max(limit, 50), query=query, project_id=project_id
         )
-        tasks.append(
-            {
-                "task_id": name,
-                "subject": subject,
-                "state": const.TASK_STATE_COMPLETE if video_file else None,
-                "progress": 100 if video_file else 0,
-                "mtime": mtime,
-                "task_path": task_path,
-                "video_file": video_file,
-                "source": "history",
-            }
-        )
-
-    return tasks
-
-
-def _collect_task_summaries(limit=20):
-    history_tasks = {task["task_id"]: task for task in _scan_history_tasks(limit=50)}
-
-    try:
-        runtime_tasks, _ = sm.state.get_all_tasks(1, 50)
-    except Exception as e:
-        logger.warning(f"failed to load runtime tasks: {e}")
-        runtime_tasks = []
-
-    for task in runtime_tasks:
-        task_id = task.get("task_id", "")
-        if not task_id:
-            continue
-
-        task_path = os.path.join(utils.task_dir(), task_id)
-        history_task = history_tasks.get(task_id, {})
-        video_files = task.get("videos") or []
-        video_file = (
-            video_files[0] if video_files else history_task.get("video_file", "")
-        )
-        subject = (
-            task.get("video_subject")
-            or history_task.get("subject")
-            or (task.get("script", "")[:40] if task.get("script") else "")
-            or task_id
-        )
-
-        history_tasks[task_id] = {
-            "task_id": task_id,
-            "subject": subject,
-            "state": task.get("state"),
-            "cross_post_state": task.get("cross_post_state"),
-            "progress": int(task.get("progress", 0) or 0),
-            "mtime": os.path.getmtime(task_path)
-            if os.path.isdir(task_path)
-            else history_task.get("mtime", 0),
-            "task_path": task_path,
-            "video_file": video_file,
-            "source": "runtime",
-        }
+    }
 
     for task_id, active_task in _active_generation_tasks().items():
-        history_task = history_tasks.get(task_id, {})
-        if history_task and _task_state_filter_key(history_task) in {
+        known_task = tasks.get(task_id, {})
+        if known_task and _task_state_filter_key(known_task) in {
             "complete",
             "failed",
         }:
@@ -1042,23 +965,23 @@ def _collect_task_summaries(limit=20):
             # 后台任务结束后必须以真实终态为准，不能把失败任务重新显示为生成中。
             continue
 
-        task_path = os.path.join(utils.task_dir(), task_id)
-        history_tasks[task_id] = {
+        tasks[task_id] = {
             "task_id": task_id,
             "subject": active_task.get("subject")
-            or history_task.get("subject")
+            or known_task.get("subject")
             or task_id,
             "state": const.TASK_STATE_PROCESSING,
-            "progress": history_task.get("progress", 0),
+            "progress": known_task.get("progress", 0),
             "mtime": active_task.get("mtime")
-            or history_task.get("mtime", datetime.now().timestamp()),
-            "task_path": task_path,
-            "video_file": history_task.get("video_file", ""),
+            or known_task.get("mtime", datetime.now().timestamp()),
+            "task_path": known_task.get("task_path")
+            or os.path.join(utils.task_dir(), task_id),
+            "video_file": known_task.get("video_file", ""),
+            "has_restore_data": known_task.get("has_restore_data", False),
             "source": "active",
         }
 
-    tasks = list(history_tasks.values())
-    return sorted(tasks, key=lambda item: item["mtime"], reverse=True)[:limit]
+    return sorted(tasks.values(), key=lambda item: item["mtime"], reverse=True)[:limit]
 
 
 def _is_headless_server():
@@ -1099,20 +1022,10 @@ def _open_task_video(video_file):
         logger.warning(f"task video does not exist: {normalized_file}")
         return
 
-    if _is_headless_server():
-        # 无桌面环境时在任务面板内嵌播放器预览，代替调用系统播放器。
-        st.session_state["task_preview_video_file"] = normalized_file
-        return
-
-    try:
-        if sys.platform == "darwin":
-            subprocess.Popen(["open", normalized_file])
-        elif sys.platform.startswith("win"):
-            os.startfile(normalized_file)  # type: ignore[attr-defined]
-        else:
-            subprocess.Popen(["xdg-open", normalized_file])
-    except Exception as e:
-        logger.error(f"failed to open task video: {normalized_file}, {e}")
+    # Always preview inside the app. Handing off to the OS player only worked on
+    # a desktop host and left the browser with nothing to show; "Open folder"
+    # still covers reaching the file locally.
+    st.session_state["task_preview_video_file"] = normalized_file
 
 
 def _delete_task(task_id, task_path, task_state=None):
@@ -1210,9 +1123,9 @@ def _render_task_table(filtered_tasks, key_prefix):
             has_video = bool(task["video_file"] and os.path.isfile(task["video_file"]))
             is_processing = _task_state_filter_key(task) == "processing"
             is_busy = is_processing or tm.is_task_busy(task)
-            has_restore_data = os.path.isfile(
-                os.path.join(task["task_path"], "script.json")
-            )
+            # Comes from the library query now, rather than a stat per row on
+            # every two-second refresh.
+            has_restore_data = bool(task.get("has_restore_data"))
             safe_task_key = "".join(ch if ch.isalnum() else "_" for ch in task_id)[:40]
 
             # 使用 Streamlit 原生 bordered container + columns 保留每行操作。
@@ -1231,10 +1144,19 @@ def _render_task_table(filtered_tasks, key_prefix):
                 row_cols[3].write(f"{task['progress']}%")
 
                 action_cols = row_cols[4].columns(
-                    4,
+                    5,
                     vertical_alignment="center",
                     gap="small",
                 )
+                with action_cols[4]:
+                    st.button(
+                        tr("Details"),
+                        key=f"details_task_{key_prefix}_{task_id}",
+                        icon=":material/info:",
+                        use_container_width=True,
+                        on_click=_go_to_view,
+                        args=("details", task_id),
+                    )
                 with action_cols[0]:
                     play_label = tr("Play")
                     if st.button(
@@ -1322,15 +1244,26 @@ def _render_task_manager_panel(tasks=None):
             ]
             _render_task_table(filtered_tasks, status_key)
 
-    _render_task_video_preview()
+
+def _dismiss_task_video_dialog():
+    st.session_state.pop("task_preview_video_file", None)
+
+
+@st.dialog(tr("Preview"), width="large", on_dismiss=_dismiss_task_video_dialog)
+def _render_task_video_dialog(preview_file):
+    task_name = os.path.basename(os.path.dirname(preview_file))
+    st.caption(f"{os.path.basename(preview_file)} · {task_name}")
+    st.video(preview_file)
 
 
 def _render_task_video_preview():
-    # 无桌面部署下“播放”按钮的浏览器内回退：在任务面板底部渲染播放器。
+    """Open the preview modal when a row's Play button has selected a file."""
     preview_file = st.session_state.get("task_preview_video_file")
     if not preview_file:
         return
 
+    # The path comes from a table row, so keep it pinned inside the task tree:
+    # this must not become a way to open an arbitrary local file.
     tasks_root = os.path.abspath(utils.task_dir())
     if not (
         preview_file.startswith(tasks_root + os.sep) and os.path.isfile(preview_file)
@@ -1338,20 +1271,7 @@ def _render_task_video_preview():
         st.session_state.pop("task_preview_video_file", None)
         return
 
-    st.divider()
-    preview_cols = st.columns([5, 1], vertical_alignment="center")
-    task_name = os.path.basename(os.path.dirname(preview_file))
-    preview_cols[0].caption(f"{os.path.basename(preview_file)} · {task_name}")
-    closed = preview_cols[1].button(
-        "✕",
-        key="close_task_video_preview",
-        use_container_width=True,
-        help=tr("Close"),
-    )
-    if closed:
-        st.session_state.pop("task_preview_video_file", None)
-        return
-    st.video(preview_file)
+    _render_task_video_dialog(preview_file)
 
 
 @st.fragment(run_every="2s")
@@ -8449,6 +8369,246 @@ def _render_wizard_layout(params):
     return uploaded_files, uploaded_audio_file, uploaded_bgm_file, voice_mode
 
 
+# -----------------------------------------------------------------------------
+# Top-level navigation: the library is the landing screen, the generation wizard
+# and the episode details screen are pushed on top of it.
+# -----------------------------------------------------------------------------
+APP_VIEWS = ("library", "create", "details")
+
+
+def _active_view():
+    view = str(st.session_state.get("app_view", "library"))
+    return view if view in APP_VIEWS else "library"
+
+
+def _go_to_view(view, episode_id=None):
+    st.session_state["app_view"] = view if view in APP_VIEWS else "library"
+    if episode_id is not None:
+        st.session_state["details_episode_id"] = episode_id
+
+
+def _apply_view_visibility(active_view):
+    """
+    Show one view, hide the others with CSS.
+
+    Every view still renders, for the same reason the wizard steps do: params
+    must collect the whole generation form in one pass, and the AppTest suite
+    looks widgets up by key across the whole page.
+    """
+    rules = "\n".join(
+        f'div[class*="st-key-app_view_{name}"] {{ display: none !important; }}'
+        for name in APP_VIEWS
+        if name != active_view
+    )
+    if rules:
+        st.markdown(f"<style>{rules}</style>", unsafe_allow_html=True)
+
+
+def _format_ms(value):
+    if value is None:
+        return "-"
+    seconds, millis = divmod(int(value), 1000)
+    minutes, seconds = divmod(seconds, 60)
+    return f"{minutes:d}:{seconds:02d}.{millis:03d}"
+
+
+def _render_library_header():
+    """Create button, search box and project filter."""
+    with st.container(key="library_header"):
+        columns = st.columns([1.4, 2.6, 2.0], vertical_alignment="bottom")
+        with columns[0]:
+            st.button(
+                tr("New Video"),
+                key="library_new_video_button",
+                type="primary",
+                icon=":material/add:",
+                use_container_width=True,
+                on_click=_go_to_view,
+                args=("create",),
+            )
+        with columns[1]:
+            st.text_input(
+                tr("Search Library"),
+                key="library_search_query",
+                placeholder=tr("Search Library Placeholder"),
+            )
+        with columns[2]:
+            projects = library.list_projects()
+            options = [0] + [project["id"] for project in projects]
+            labels = {0: tr("All Projects")}
+            labels.update(
+                {p["id"]: f"{p['name']} ({p['episodes']})" for p in projects}
+            )
+            stable_selectbox(
+                tr("Project"),
+                options=options,
+                default_value=0,
+                key="library_project_filter",
+                format_func=lambda value: labels.get(value, str(value)),
+            )
+
+    with st.container(key="library_new_project"):
+        with st.expander(tr("New Project"), expanded=False):
+            name = st.text_input(
+                tr("Project Name"),
+                key="library_new_project_name",
+                placeholder=tr("Project Name Placeholder"),
+            )
+            if st.button(tr("Create Project"), key="library_create_project_button"):
+                if library.create_project(name):
+                    st.success(tr("Project Created"))
+                else:
+                    st.warning(tr("Project Name Required"))
+
+
+def _render_library_view():
+    _render_library_header()
+    query = str(st.session_state.get("library_search_query", "") or "")
+    project_id = st.session_state.get(
+        localized_widget_key("library_project_filter"), 0
+    )
+    tasks = _collect_task_summaries(
+        limit=50, query=query, project_id=project_id or None
+    )
+    if not tasks:
+        st.info(tr("No Tasks Yet"))
+        return
+    _render_task_table(tasks, "library")
+
+
+def _render_episode_details(episode_id):
+    """
+    Everything the database now knows about one episode.
+
+    The scene list is the part that did not exist before: the pipeline computed
+    per-sentence timing for the subtitles and discarded it, so there was no way
+    to see which narration line a given visual covers.
+    """
+    header_cols = st.columns([1, 1, 6], vertical_alignment="center")
+    header_cols[0].button(
+        tr("Back To Library"),
+        key="details_back_button",
+        icon=":material/arrow_back:",
+        use_container_width=True,
+        on_click=_go_to_view,
+        args=("library",),
+    )
+    # This screen does not poll: a running task moves on, so re-read on demand
+    # rather than putting the whole details query on a timer.
+    header_cols[1].button(
+        tr("Refresh"),
+        key="details_refresh_button",
+        icon=":material/refresh:",
+        use_container_width=True,
+    )
+    if not episode_id:
+        return
+
+    episode = library.get_episode(episode_id)
+    if not episode:
+        st.warning(tr("Episode Not Found"))
+        return
+
+    st.subheader(episode.get("title") or episode_id)
+    run_data = episode.get("run_data") or {}
+    state = _normalize_task_state(episode.get("state"))
+    progress = int(episode.get("progress") or 0)
+
+    if state == const.TASK_STATE_FAILED:
+        stage = str(run_data.get("failed_stage") or "")
+        error = str(run_data.get("error") or "")
+        st.error(f"{tr('Failed At Stage')}: {stage}\n\n{error}" if stage else error)
+    elif state == const.TASK_STATE_PROCESSING:
+        st.progress(progress, text=f"{tr('Task Progress')}: {progress}%")
+
+    scenes = library.list_scenes(episode_id)
+    assets = library.list_assets(episode_id)
+    renders = library.episode_video_files(episode_id, run_data)
+
+    logs = webui_task.get_task_logs(episode_id)
+    tabs = st.tabs(
+        [
+            f"{tr('Scenes')} ({len(scenes)})",
+            f"{tr('Assets')} ({len(assets)})",
+            f"{tr('Renders')} ({len(renders)})",
+            tr("Script"),
+            f"{tr('Logs')} ({len(logs)})",
+        ]
+    )
+
+    with tabs[0]:
+        if scenes:
+            st.dataframe(
+                [
+                    {
+                        "#": scene["idx"],
+                        tr("Start"): _format_ms(scene["start_ms"]),
+                        tr("End"): _format_ms(scene["end_ms"]),
+                        tr("Narration"): scene["narration"],
+                    }
+                    for scene in scenes
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.caption(tr("No Scenes Recorded"))
+
+    with tabs[1]:
+        if assets:
+            st.dataframe(
+                [
+                    {
+                        tr("Provider"): asset["provider"] or "-",
+                        tr("File"): asset["file_name"],
+                        tr("Keyword"): asset["search_term"] or "-",
+                        tr("Size"): (
+                            f"{asset['width']}x{asset['height']}"
+                            if asset["width"]
+                            else "-"
+                        ),
+                    }
+                    for asset in assets
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.caption(tr("No Assets Recorded"))
+
+    with tabs[2]:
+        video_files = library.episode_video_files(episode_id, run_data)
+        for path in video_files:
+            st.write(os.path.basename(path))
+            if os.path.isfile(path):
+                st.video(path)
+        if not video_files:
+            st.caption(tr("No Renders Yet"))
+
+    with tabs[3]:
+        script = episode.get("script") or ""
+        if script:
+            st.text_area(
+                tr("Script"),
+                value=script,
+                height=260,
+                disabled=True,
+                key="details_script_view",
+                label_visibility="collapsed",
+            )
+        else:
+            st.caption(tr("No Script Yet"))
+
+    with tabs[4]:
+        if logs:
+            st.code("\n".join(logs))
+        else:
+            # Logs live in this process's memory, capped at the most recent
+            # tasks, so a run started by the CLI, the API or an earlier process
+            # has none here even though its episode row exists.
+            st.caption(tr("No Logs For This Task"))
+
+
 def _render_application():
     """按固定顺序渲染顶部栏、弹窗、生成表单和任务结果。"""
     _render_top_bar()
@@ -8472,19 +8632,36 @@ def _render_application():
         st.session_state.get("match_materials_to_script", False)
     )
 
-    if _wizard_enabled():
-        panel_inputs = _render_wizard_layout(params)
-    else:
-        panel_inputs = _render_classic_layout(params)
-    uploaded_files, uploaded_audio_file, uploaded_bgm_file, voice_mode = panel_inputs
+    # Only the active view renders. Hiding the others with CSS was tried first,
+    # but wrapping the generation form in a container makes Streamlit's keyless
+    # media elements (st.audio / st.video take no key) accumulate across the
+    # rerun that a task restore triggers, producing duplicate players.
+    active_view = _active_view()
+    generation_submitted = False
 
-    generation_submitted = _render_generation_controls(
-        params,
-        uploaded_files,
-        uploaded_audio_file,
-        uploaded_bgm_file,
-        voice_mode,
-    )
+    if active_view == "library":
+        _render_library_view()
+    elif active_view == "details":
+        _render_episode_details(st.session_state.get("details_episode_id", ""))
+    else:
+        if _wizard_enabled():
+            panel_inputs = _render_wizard_layout(params)
+        else:
+            panel_inputs = _render_classic_layout(params)
+        uploaded_files, uploaded_audio_file, uploaded_bgm_file, voice_mode = (
+            panel_inputs
+        )
+        generation_submitted = _render_generation_controls(
+            params,
+            uploaded_files,
+            uploaded_audio_file,
+            uploaded_bgm_file,
+            voice_mode,
+        )
+
+    # A single player shared by the library table and the task manager popover.
+    # Rendering one per table created duplicate Streamlit elements.
+    _render_task_video_preview()
 
     # 生成分支在启动后台线程前已经请求过保存。普通控件交互继续请求非阻塞保存；
     # 如果后台任务正在使用配置，配置层会在任务结束时自动应用并落盘最新值。

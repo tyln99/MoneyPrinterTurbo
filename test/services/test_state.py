@@ -9,7 +9,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.models import const
-from app.services.state import MemoryState, RedisState
+from unittest.mock import patch
+
+from app.config import config
+from app.services import db
+from app.services.state import MemoryState, PostgresState, RedisState
 
 
 class _FakeRedis:
@@ -280,6 +284,121 @@ class TestRedisState(unittest.TestCase):
                     future.result(timeout=5)
 
             self.assertIsNone(state.get_task(task_id))
+
+
+TEST_DSN = os.environ.get("MPT_TEST_DATABASE_URL", "")
+
+from test.services.test_db import isolated_dsn, reset_test_schema  # noqa: E402
+
+
+@unittest.skipUnless(TEST_DSN, "MPT_TEST_DATABASE_URL not set")
+class TestPostgresState(unittest.TestCase):
+    """
+    PostgresState is the production implementation, so it has to honour the same
+    contract MemoryState does - including the parts that are easy to get wrong,
+    like update_task replacing rather than merging.
+    """
+
+    def setUp(self):
+        reset_test_schema()
+        self._patcher = patch.object(
+            config, "app", dict(config.app, database_url=isolated_dsn())
+        )
+        self._patcher.start()
+        db.reset_pool()
+        db.ensure_migrated()
+        self.state = PostgresState()
+        self.task_id = f"pgstate-{uuid.uuid4().hex[:8]}"
+
+    def tearDown(self):
+        self.state.delete_task(self.task_id)
+        db.reset_pool()
+        self._patcher.stop()
+
+    def test_round_trips_the_task_record(self):
+        self.state.update_task(
+            self.task_id,
+            state=const.TASK_STATE_PROCESSING,
+            progress=40,
+            videos=["final-1.mp4"],
+            audio_duration=12.5,
+        )
+        task = self.state.get_task(self.task_id)
+        self.assertEqual(task["task_id"], self.task_id)
+        self.assertEqual(task["state"], const.TASK_STATE_PROCESSING)
+        self.assertEqual(task["progress"], 40)
+        self.assertEqual(task["videos"], ["final-1.mp4"])
+        self.assertEqual(task["audio_duration"], 12.5)
+
+    def test_update_replaces_rather_than_merges(self):
+        """MemoryState assigns a fresh dict; this must not quietly differ."""
+        self.state.update_task(self.task_id, progress=10, videos=["a.mp4"])
+        self.state.update_task(self.task_id, progress=20)
+        task = self.state.get_task(self.task_id)
+        self.assertEqual(task["progress"], 20)
+        self.assertNotIn("videos", task)
+
+    def test_patch_merges_into_an_existing_task(self):
+        self.state.update_task(self.task_id, progress=10, videos=["a.mp4"])
+        self.assertTrue(self.state.patch_task(self.task_id, cross_post_state="pending"))
+        task = self.state.get_task(self.task_id)
+        self.assertEqual(task["videos"], ["a.mp4"])
+        self.assertEqual(task["cross_post_state"], "pending")
+
+    def test_patch_refuses_to_create_a_missing_task(self):
+        """Async publishing must not resurrect a task the user just deleted."""
+        self.assertFalse(self.state.patch_task("pgstate-does-not-exist", x=1))
+        self.assertIsNone(self.state.get_task("pgstate-does-not-exist"))
+
+    def test_patch_without_fields_is_a_no_op(self):
+        self.state.update_task(self.task_id, progress=10)
+        self.assertFalse(self.state.patch_task(self.task_id))
+
+    def test_progress_is_clamped(self):
+        self.state.update_task(self.task_id, progress=150)
+        self.assertEqual(self.state.get_task(self.task_id)["progress"], 100)
+
+    def test_missing_task_reads_as_none(self):
+        self.assertIsNone(self.state.get_task("pgstate-never-written"))
+
+    def test_delete_removes_the_task(self):
+        self.state.update_task(self.task_id, progress=10)
+        self.state.delete_task(self.task_id)
+        self.assertIsNone(self.state.get_task(self.task_id))
+
+    def test_get_all_tasks_paginates_and_reports_a_total(self):
+        self.state.update_task(self.task_id, progress=10)
+        tasks, total = self.state.get_all_tasks(1, 1)
+        self.assertEqual(len(tasks), 1)
+        self.assertGreaterEqual(total, 1)
+
+    def test_searchable_fields_are_mirrored_into_columns(self):
+        """
+        title/topic/script back the full-text index, so they must leave run_data
+        and land in real columns.
+        """
+        self.state.update_task(
+            self.task_id, video_subject="Walking every day", script="Walking is good."
+        )
+        with db.connection() as conn:
+            row = conn.execute(
+                "SELECT title, topic, script FROM episode WHERE id = %s",
+                (self.task_id,),
+            ).fetchone()
+        self.assertEqual(row["topic"], "Walking every day")
+        self.assertEqual(row["script"], "Walking is good.")
+
+    def test_a_write_failure_does_not_abort_the_caller(self):
+        """
+        update_task is called from inside the render loop. A database blip must
+        not kill a generation the user has already paid for.
+        """
+        with patch.object(db, "connection", side_effect=RuntimeError("db down")):
+            self.state.update_task(self.task_id, progress=50)      # must not raise
+            self.assertIsNone(self.state.get_task(self.task_id))
+            self.assertFalse(self.state.patch_task(self.task_id, x=1))
+            self.assertEqual(self.state.get_all_tasks(1, 10), ([], 0))
+            self.state.delete_task(self.task_id)                   # must not raise
 
 
 if __name__ == "__main__":

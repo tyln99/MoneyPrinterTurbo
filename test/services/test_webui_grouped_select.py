@@ -59,6 +59,7 @@ def _running_app(harness, *, saved_video_source="pexels"):
         ),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
         assert [str(item.value) for item in app.exception] == []

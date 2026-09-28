@@ -41,6 +41,7 @@ def catalan_app():
         ),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "ca"
         app.run()
         assert not app.exception

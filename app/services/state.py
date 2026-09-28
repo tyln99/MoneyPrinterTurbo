@@ -3,8 +3,12 @@ import copy
 import threading
 from abc import ABC, abstractmethod
 
+from loguru import logger
+from psycopg.types.json import Jsonb
+
 from app.config import config
 from app.models import const
+from app.services import db
 
 
 _PATCH_EXISTING_TASK_SCRIPT = """
@@ -37,6 +41,11 @@ class BaseState(ABC):
     @abstractmethod
     def patch_task(self, task_id: str, **kwargs) -> bool:
         """只更新已有任务的指定字段；任务不存在时返回 False。"""
+        pass
+
+    @abstractmethod
+    def delete_task(self, task_id: str):
+        """Remove a task. Every implementation already had this; the ABC did not."""
         pass
 
 
@@ -228,6 +237,135 @@ class RedisState(BaseState):
         return value_str
 
 
+
+# PostgreSQL state management
+class PostgresState(BaseState):
+    """
+    Durable task state.
+
+    This is the production implementation. `MemoryState` above is kept for the
+    test suite, which instantiates it directly or patches the module singleton;
+    it is not a runtime fallback.
+
+    Nothing connects here. The pool in `app.services.db` opens on first query, so
+    constructing this at import time is safe even when the database is down.
+
+    Write failures are logged and swallowed rather than raised. A task record is
+    worth less than the render it is describing: a blip while writing a progress
+    tick must not abort a generation the user has already paid for. Reads return
+    the same empty answers the other implementations give for a missing task.
+    """
+
+    # Mirrored out of the task record into their own columns so the library can
+    # index and full-text search them. Everything else stays in run_data.
+    _COLUMNS = {"video_subject": "topic", "script": "script"}
+
+    def get_all_tasks(self, page: int, page_size: int):
+        offset = max(page - 1, 0) * page_size
+        try:
+            with db.connection() as conn:
+                total = conn.execute("SELECT count(*) AS n FROM episode").fetchone()["n"]
+                rows = conn.execute(
+                    "SELECT id, state, progress, run_data FROM episode"
+                    " ORDER BY updated_at DESC LIMIT %s OFFSET %s",
+                    (page_size, offset),
+                ).fetchall()
+        except Exception as e:
+            logger.error(f"failed to list tasks: {type(e).__name__}: {e}")
+            return [], 0
+        return [self._to_task(row) for row in rows], total
+
+    def update_task(
+        self,
+        task_id: str,
+        state: int = const.TASK_STATE_PROCESSING,
+        progress: int = 0,
+        **kwargs,
+    ):
+        progress = min(max(int(progress), 0), 100)
+        title = str(kwargs.get("video_subject") or "")[:200]
+        columns = {
+            column: str(kwargs.get(key) or "")
+            for key, column in self._COLUMNS.items()
+        }
+        try:
+            with db.connection() as conn:
+                # Replaces the whole record, matching MemoryState, which assigns
+                # a fresh dict rather than merging.
+                conn.execute(
+                    "INSERT INTO episode (id, state, progress, run_data, title, topic, script)"
+                    " VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                    " ON CONFLICT (id) DO UPDATE SET"
+                    "   state = EXCLUDED.state,"
+                    "   progress = EXCLUDED.progress,"
+                    "   run_data = EXCLUDED.run_data,"
+                    "   title = coalesce(nullif(EXCLUDED.title, \'\'), episode.title),"
+                    "   topic = coalesce(nullif(EXCLUDED.topic, \'\'), episode.topic),"
+                    "   script = coalesce(nullif(EXCLUDED.script, \'\'), episode.script),"
+                    "   updated_at = now()",
+                    (
+                        task_id,
+                        state,
+                        progress,
+                        Jsonb(kwargs),
+                        title,
+                        columns["topic"],
+                        columns["script"],
+                    ),
+                )
+                conn.commit()
+        except Exception as e:
+            logger.error(f"failed to update task {task_id}: {type(e).__name__}: {e}")
+
+    def get_task(self, task_id: str):
+        try:
+            with db.connection() as conn:
+                row = conn.execute(
+                    "SELECT id, state, progress, run_data FROM episode WHERE id = %s",
+                    (task_id,),
+                ).fetchone()
+        except Exception as e:
+            logger.error(f"failed to read task {task_id}: {type(e).__name__}: {e}")
+            return None
+        return self._to_task(row) if row else None
+
+    def patch_task(self, task_id: str, **kwargs) -> bool:
+        if not kwargs:
+            return False
+        try:
+            with db.connection() as conn:
+                # jsonb || jsonb merges in one statement, so unlike the
+                # read-modify-write this replaces there is no lost-update window
+                # between two processes.
+                result = conn.execute(
+                    "UPDATE episode SET run_data = run_data || %s, updated_at = now()"
+                    " WHERE id = %s",
+                    (Jsonb(kwargs), task_id),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        except Exception as e:
+            logger.error(f"failed to patch task {task_id}: {type(e).__name__}: {e}")
+            return False
+
+    def delete_task(self, task_id: str):
+        try:
+            with db.connection() as conn:
+                conn.execute("DELETE FROM episode WHERE id = %s", (task_id,))
+                conn.commit()
+        except Exception as e:
+            logger.error(f"failed to delete task {task_id}: {type(e).__name__}: {e}")
+
+    @staticmethod
+    def _to_task(row) -> dict:
+        """Rebuild the flat record shape the other implementations return."""
+        task = dict(row.get("run_data") or {})
+        task["task_id"] = row["id"]
+        task["state"] = row["state"]
+        task["progress"] = row["progress"]
+        return task
+
+
 # Global state
 _enable_redis = config.app.get("enable_redis", False)
 _redis_host = config.app.get("redis_host", "localhost")
@@ -235,10 +373,6 @@ _redis_port = config.app.get("redis_port", 6379)
 _redis_db = config.app.get("redis_db", 0)
 _redis_password = config.app.get("redis_password", None)
 
-state = (
-    RedisState(
-        host=_redis_host, port=_redis_port, db=_redis_db, password=_redis_password
-    )
-    if _enable_redis
-    else MemoryState()
-)
+# PostgreSQL is required, so this is unconditional. MemoryState and RedisState
+# stay for the test suite and for anyone importing them directly.
+state = PostgresState()

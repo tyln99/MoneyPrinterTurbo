@@ -311,6 +311,7 @@ def test_full_voiceover_preview_is_disabled_until_script_exists():
         patch.object(config, "save_config"),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.run()
 
@@ -335,6 +336,7 @@ def test_script_shows_estimate_and_enables_full_voiceover_preview():
         patch.object(config, "save_config"),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.session_state["video_script"] = (
             "人工智能正在改变日常生活。合理使用工具，可以帮助我们提高工作效率。"
@@ -373,6 +375,7 @@ def test_short_preview_autoplays_only_after_explicit_click_and_reuses_cache():
         patch.object(voice, "get_audio_duration", return_value=3.0),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.run()
 
@@ -416,6 +419,7 @@ def test_full_preview_uses_script_and_reuses_identical_cached_audio():
         patch.object(voice, "get_audio_duration", return_value=12.3),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.session_state["video_script"] = script
         app.run()
@@ -451,6 +455,7 @@ def test_full_preview_reports_when_tts_returns_no_audio():
         patch.object(voice, "tts", return_value=None),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.session_state["video_script"] = "验证配音服务空响应。"
         app.run()
@@ -484,6 +489,7 @@ def test_full_preview_returns_immediately_when_runtime_config_is_busy():
         patch.object(voice, "tts") as synthesize,
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.session_state["video_script"] = "验证忙碌状态不会阻塞页面。"
         app.run()
@@ -519,6 +525,7 @@ def test_full_preview_warns_when_audio_duration_is_unavailable():
         patch.object(voice, "get_audio_duration", return_value=0),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.session_state["video_script"] = "验证无法读取试听音频时长的提示。"
         app.run()

@@ -516,23 +516,30 @@ def test_generation_submit_skips_duplicate_config_save():
     assert isinstance(controls.body[-1], ast.Return)
     assert ast.unparse(controls.body[-1].value) == "start_button"
 
+    # ast.walk rather than application.body: the generation controls now render
+    # inside a view container, so the assignment is nested. What this test
+    # guards is that _save_runtime_config is not called a second time after a
+    # submit, and the guarded_save assertion below still pins that exactly.
+    # The variable is initialised to False for the views that render no
+    # generation form, so match on the call itself rather than on the first
+    # assignment ast.walk happens to reach.
     submitted_assignment = next(
         node
-        for node in application.body
+        for node in ast.walk(application)
         if isinstance(node, ast.Assign)
+        and isinstance(node.value, ast.Call)
         and any(
             isinstance(target, ast.Name) and target.id == "generation_submitted"
             for target in node.targets
         )
     )
-    assert isinstance(submitted_assignment.value, ast.Call)
     assert _attribute_name(submitted_assignment.value.func) == (
         "_render_generation_controls"
     )
 
     guarded_save = next(
         node
-        for node in application.body
+        for node in ast.walk(application)
         if isinstance(node, ast.If)
         and ast.unparse(node.test) == "not generation_submitted"
     )

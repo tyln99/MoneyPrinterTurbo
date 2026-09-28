@@ -86,6 +86,7 @@ def test_tts_provider_inputs_render_the_standardized_labels():
         patch.object(voice, "get_chatterbox_voices", return_value=[]),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.run()
 
@@ -122,6 +123,7 @@ def test_voxcpm_settings_render_model_and_endpoint_fields():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -159,6 +161,7 @@ def test_voxcpm_settings_render_reference_audio_with_cloud_notice():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -186,6 +189,7 @@ def test_voxcpm_reconnect_restores_saved_key_instead_of_clearing_it():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.session_state["voxcpm_api_key_input"] = ""
         app.run()
@@ -215,6 +219,7 @@ def test_elevenlabs_reconnect_restores_saved_key_before_loading_voices():
         patch.object(voice, "get_elevenlabs_voices", return_value=[]) as get_voices,
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.session_state["elevenlabs_api_key_input"] = ""
         app.run()
@@ -244,6 +249,7 @@ def test_elevenlabs_environment_key_is_used_without_persisting_it():
         patch.object(voice, "get_elevenlabs_voices", return_value=[]) as get_voices,
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -265,6 +271,7 @@ def test_minimax_reconnect_restores_saved_tts_key():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.session_state["minimax_tts_api_key_input"] = ""
         app.run()
@@ -291,6 +298,7 @@ def test_minimax_shared_llm_key_is_not_duplicated_in_tts_config():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
 
@@ -324,6 +332,7 @@ def test_minimax_voice_selector_accepts_a_custom_voice_id():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
         voice_select = _widget_by_key(
@@ -374,6 +383,7 @@ def test_minimax_voices_load_only_on_demand_and_sync_the_selected_voice():
         ) as get_catalog,
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "zh"
         app.run()
 

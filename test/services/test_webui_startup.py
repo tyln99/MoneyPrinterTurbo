@@ -36,6 +36,7 @@ class TestWebuiStartup(unittest.TestCase):
                 from streamlit.testing.v1 import AppTest
 
                 app = AppTest.from_file({str(WEBUI_MAIN)!r}, default_timeout=30)
+                app.session_state["app_view"] = "create"
                 app.run()
                 if app.exception:
                     raise RuntimeError([str(item.value) for item in app.exception])

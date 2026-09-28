@@ -3,6 +3,27 @@ x-common-volumes: &common-volumes
   - ./storage:/MoneyPrinterTurbo/storage
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: "moneyprinterturbo-postgres"
+    environment:
+      POSTGRES_USER: moneyprinterturbo
+      POSTGRES_PASSWORD: moneyprinterturbo
+      POSTGRES_DB: moneyprinterturbo
+    # Published so the WebUI and CLI can be run natively against the same
+    # database. Bound to loopback, matching how the app ports are exposed.
+    ports:
+      - "127.0.0.1:5432:5432"
+    # A named volume, not a bind mount: a single-file bind mount of config.toml
+    # has already broken in this repo, and Postgres needs a real filesystem.
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U moneyprinterturbo" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: always
   webui:
     image: ghcr.io/harry0703/moneyprinterturbo:latest
     container_name: "moneyprinterturbo-webui"
@@ -10,6 +31,11 @@ services:
       - "127.0.0.1:8501:8501"
     command: [ "streamlit", "run", "./webui/Main.py", "--server.address=0.0.0.0", "--server.port=8501", "--browser.serverAddress=127.0.0.1", "--server.enableCORS=True", "--browser.gatherUsageStats=False", "--client.toolbarMode=minimal", "--logger.hideWelcomeMessage=True", "--server.showEmailPrompt=False" ]
     volumes: *common-volumes
+    environment:
+      DATABASE_URL: "postgresql://moneyprinterturbo:moneyprinterturbo@postgres:5432/moneyprinterturbo"
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: always
   api:
     image: ghcr.io/harry0703/moneyprinterturbo:latest
@@ -18,4 +44,12 @@ services:
       - "127.0.0.1:8080:8080"
     command: [ "python3", "main.py" ]
     volumes: *common-volumes
+    environment:
+      DATABASE_URL: "postgresql://moneyprinterturbo:moneyprinterturbo@postgres:5432/moneyprinterturbo"
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: always
+
+volumes:
+  postgres-data:

@@ -23,6 +23,7 @@ def test_webui_upload_post_setup_guide_links_to_required_pages():
     # 泛化提示，导致用户误把登录邮箱当作发布用户名称。
     with patch.object(config, "try_save_config", return_value=True):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.run()
         app.session_state["settings_dialog_open"] = True
         app.run()
@@ -51,6 +52,7 @@ def test_webui_upload_post_checkboxes_stay_decoupled():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.run()
         app.session_state["settings_dialog_open"] = True
         app.run()
@@ -84,6 +86,7 @@ def test_webui_upload_post_youtube_privacy_fallback_to_public():
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.run()
         app.session_state["settings_dialog_open"] = True
         app.run()
@@ -100,6 +103,7 @@ def test_youtube_audience_selection_persists_on_first_change(saved):
                   upload_post_youtube_made_for_kids=saved)
     with patch.object(config, "app", values), patch.object(config, "try_save_config", return_value=True):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60).run()
+        app.session_state["app_view"] = "create"
         app.session_state["settings_dialog_open"] = True
         app.run()
         assert not app.exception
@@ -119,6 +123,7 @@ def test_youtube_audience_hidden_for_other_platforms():
                   upload_post_youtube_made_for_kids=True)
     with patch.object(config, "app", values), patch.object(config, "try_save_config", return_value=True):
         app = AppTest.from_file(str(WEBUI_MAIN), default_timeout=60).run()
+        app.session_state["app_view"] = "create"
         app.session_state["settings_dialog_open"] = True
         app.run()
         assert not app.exception

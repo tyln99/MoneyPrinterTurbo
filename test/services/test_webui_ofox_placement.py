@@ -46,6 +46,7 @@ def test_ofox_settings_order_and_saved_values(language):
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(WEBUI), default_timeout=60)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = language
         app.run()
         app.session_state["settings_dialog_open"] = True

@@ -144,6 +144,7 @@ def test_batch_script_and_video_use_settings_key_without_local_llm():
         patch.object(llm, "generate_script") as generate,
     ):
         app = AppTest.from_file(str(MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.run()
         fields = [x for x in app.text_input if x.key == "loomloom_user_api_token"]
@@ -196,6 +197,7 @@ def quote_page():
         )
         submit = stack.enter_context(patch("app.services.webui_task.submit_generation"))
         app = AppTest.from_file(str(MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.session_state["video_subject"] = "AI daily life"
         app.session_state["video_script"] = "AI helps people every day."
@@ -357,6 +359,7 @@ def test_batch_candidate_autofill_once_preserves_manual_count(script):
         patch.object(config, "try_save_config", return_value=True),
     ):
         app = AppTest.from_file(str(MAIN), default_timeout=30)
+        app.session_state["app_view"] = "create"
         app.session_state["ui_language"] = "en"
         app.session_state["loomloom_script_candidates"] = (candidate,)
         app.run()
