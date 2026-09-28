@@ -87,3 +87,45 @@ export function useDeleteTask() {
     onSuccess: () => client.invalidateQueries({ queryKey: ["episodes"] }),
   })
 }
+
+export function useCatalog() {
+  // Fonts, providers and source groups change only when the server restarts.
+  return useQuery({ queryKey: ["catalog"], queryFn: api.catalog, staleTime: Infinity })
+}
+
+export function useVoices(ttsServer: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["voices", ttsServer],
+    queryFn: () => api.voices(ttsServer),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useSettings() {
+  return useQuery({ queryKey: ["settings"], queryFn: api.settings })
+}
+
+export function useSaveSettings() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: api.saveSettings,
+    onSuccess: () => client.invalidateQueries({ queryKey: ["settings"] }),
+  })
+}
+
+export function useCreateVideo() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: api.createVideo,
+    onSuccess: () => client.invalidateQueries({ queryKey: ["episodes"] }),
+  })
+}
+
+export function useGenerateScript() {
+  return useMutation({ mutationFn: api.generateScript })
+}
+
+export function useGenerateTerms() {
+  return useMutation({ mutationFn: api.generateTerms })
+}

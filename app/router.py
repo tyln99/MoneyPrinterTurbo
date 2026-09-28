@@ -10,7 +10,7 @@ Resources:
 from fastapi import APIRouter
 
 from app.controllers import ping
-from app.controllers.v1 import library, llm, video
+from app.controllers.v1 import library, llm, settings, video
 
 root_api_router = APIRouter()
 root_api_router.include_router(ping.router)
@@ -19,3 +19,4 @@ root_api_router.include_router(ping.router)
 root_api_router.include_router(video.router)
 root_api_router.include_router(llm.router)
 root_api_router.include_router(library.router)
+root_api_router.include_router(settings.router)

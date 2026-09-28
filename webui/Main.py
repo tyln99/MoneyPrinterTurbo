@@ -45,6 +45,7 @@ from app.models.schema import (
 from app.services import bgm as bgm_service
 from app.services import (
     cache_manager,
+    catalog,
     library,
     llm,
     loomloom,
@@ -53,6 +54,7 @@ from app.services import (
     muapi,
     ofox,
     subtitle,
+    ui_settings,
     video,
     volcengine_seedance,
     voice,
@@ -119,27 +121,10 @@ VOICE_MODE_TTS = "tts"
 VOICE_MODE_UPLOAD = "upload"
 VOICE_MODE_NONE = "none"
 LOOMLOOM_MAX_POLL_FAILURES = 5
-# WebUI 按素材能力分组展示视频来源，但底层仍保存原有 video_source 值。
-# AI 视频组与设置页共用同一业务顺序：合作服务商优先，并按秘塔、OFox、
-# 胜算云、火山引擎排列；其余服务随后展示。这样两个入口的顺序一致，同时
-# 不改变 config.toml、历史任务和 API 请求中的字段语义，旧用户无需迁移配置。
-VIDEO_SOURCE_GROUPS = {
-    "stock_video": ("pexels", "pixabay", "coverr"),
-    "ai_video": (
-        "metaso_minimax",
-        "ofox",
-        "loomloom",
-        "volcengine_seedance",
-        "wavespeed",
-        "muapi",
-    ),
-    "ai_image": ("openai_image", "pollinations_image"),
-    "local": ("local",),
-}
-# Flattened once so validation cannot fall behind what the dropdown offers.
-SELECTABLE_VIDEO_SOURCES = frozenset(
-    source for group in VIDEO_SOURCE_GROUPS.values() for source in group
-)
+# 分组定义在 app/services/catalog.py，供 WebUI 和 REST API 共用，避免两个
+# 入口给出不同的来源列表。
+VIDEO_SOURCE_GROUPS = catalog.VIDEO_SOURCE_GROUPS
+SELECTABLE_VIDEO_SOURCES = catalog.SELECTABLE_VIDEO_SOURCES
 # Upload-Post 的 API Key 与发布用户分别在两个页面管理，并且发布用户名称
 # 不等于登录邮箱。集中维护入口可以避免多语言文案各自硬编码 URL 后发生偏差，
 # 也方便用户从 WebUI 直接完成首次配置和后续账号维护。
@@ -266,16 +251,8 @@ PRESET_EXCLUDED_PARAM_KEYS = frozenset(
         "bgm_file",
     }
 )
-# 密钥按配置项名称后缀识别。新增 Provider 只要沿用现有命名，就会自动进入
-# 备份，不需要再维护第二份密钥清单。
-CREDENTIAL_KEY_SUFFIXES = (
-    "api_key",
-    "api_keys",
-    "api_token",
-    "access_key",
-    "secret_key",
-    "speech_key",
-)
+# 后缀清单与 REST 设置接口共用，见 app/services/ui_settings.py。
+CREDENTIAL_KEY_SUFFIXES = ui_settings.CREDENTIAL_KEY_SUFFIXES
 # 只恢复密钥而不恢复配套配置项时，凭据仍然不可用。这些配套项与密钥一起备份。
 CREDENTIAL_COMPANION_KEYS = {
     # Azure 语音必须同时知道区域。
@@ -342,77 +319,26 @@ def _save_runtime_config():
     return saved
 
 
+# 这些读取器现在由 app/services/ui_settings.py 实现，REST 设置接口共用同一份
+# 归一化逻辑；手工编辑过的 config.toml 在两个入口得到完全一致的降级结果。
 def _saved_ui_choice(key, options, default):
-    """读取一个持久化选择，并把旧配置或手工编辑的非法值降级为默认值。"""
-    options = list(options)
-    saved = config.ui.get(key, default)
-    numeric_default = isinstance(default, (int, float)) and not isinstance(
-        default, bool
-    )
-    # bool 是 int 的子类，``True == 1``。手工把数值选项写成 TOML
-    # 布尔值时必须拒绝，不能让它伪装成第一个数值 option。
-    if numeric_default and isinstance(saved, bool):
-        return default
-    for option in options:
-        if saved == option:
-            # 返回 options 中的真实值，顺便把 TOML 1.0 等价归一化为
-            # 整数选项 1，避免下游参数类型随配置写法漂移。
-            return option
-
-    # TOML 中的数值通常保留原类型；仍兼容用户手工写成字符串的情况。
-    if numeric_default and isinstance(saved, str):
-        try:
-            converted = type(default)(saved)
-        except (TypeError, ValueError):
-            converted = None
-        for option in options:
-            if converted == option:
-                return option
-    return default
+    return ui_settings.saved_choice("ui", key, options, default)
 
 
 def _saved_ui_number(key, default, minimum, maximum, number_type=float):
-    """读取并限幅持久化数值，避免非法配置破坏 Streamlit slider。"""
-    try:
-        saved = config.ui.get(key, default)
-        if isinstance(saved, bool):
-            raise ValueError("boolean is not a numeric setting")
-        value = number_type(saved)
-        if isinstance(value, float) and not math.isfinite(value):
-            raise ValueError("non-finite value")
-    except (TypeError, ValueError, OverflowError):
-        value = default
-    return min(maximum, max(minimum, value))
+    return ui_settings.saved_number("ui", key, default, minimum, maximum, number_type)
 
 
 def _saved_ui_bool(key, default):
-    """兼容 TOML 布尔值和常见手工字符串，拒绝含义不明的旧值。"""
-    value = config.ui.get(key, default)
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"1", "true", "yes", "on"}:
-            return True
-        if normalized in {"0", "false", "no", "off"}:
-            return False
-    return default
+    return ui_settings.saved_bool("ui", key, default)
 
 
 def _saved_ui_color(key, default):
-    """只把标准六位十六进制颜色传给 Streamlit color picker。"""
-    value = str(config.ui.get(key, default) or "").strip()
-    if re.fullmatch(r"#[0-9a-fA-F]{6}", value):
-        return value
-    return default
+    return ui_settings.saved_color("ui", key, default)
 
 
 def _saved_ui_text(key, default="", max_length=None):
-    """读取持久化文本并遵守对应 WebUI 控件的长度上限。"""
-    value = str(config.ui.get(key, default) or default)
-    if max_length is not None:
-        value = value[:max_length]
-    return value
+    return ui_settings.saved_text("ui", key, default, max_length)
 
 
 def _run_llm_read_operation(operation_name, operation):
@@ -1718,15 +1644,10 @@ support_locales = [
 
 @st.cache_data(ttl=30, show_spinner=False)
 def get_all_fonts():
-    # 字体目录很少变化，但 Streamlit 每次控件交互都会 rerun 页面。短周期缓存
-    # 可以避免连续重复 os.walk，同时保证新增字体后最多 30 秒即可被发现。
-    fonts = []
-    for root, dirs, files in os.walk(font_dir):
-        for file in files:
-            if file.endswith(".ttf") or file.endswith(".ttc"):
-                fonts.append(file)
-    fonts.sort()
-    return fonts
+    # 扫描实现见 app/services/catalog.py，与字体接口共用。这里保留短周期缓存：
+    # Streamlit 每次控件交互都会 rerun，缓存可避免连续重复 os.walk，同时保证
+    # 新增字体后最多 30 秒即可被发现。
+    return catalog.list_fonts()
 
 
 @st.cache_data(ttl=30, show_spinner=False)

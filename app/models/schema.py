@@ -705,3 +705,79 @@ class TaskLogData(BaseModel):
 
 class TaskLogResponse(BaseResponse):
     data: TaskLogData
+
+
+# ---- SETTINGS & CATALOG ----
+class TtsServerOption(BaseModel):
+    value: str
+    label: str
+
+
+class LlmProviderExtraField(BaseModel):
+    config_suffix: str
+    required: bool = False
+    secret: bool = False
+    default_value: str = ""
+
+
+class LlmProviderOption(BaseModel):
+    provider_id: str
+    label: str
+    api_key_url: str = ""
+    default_model: str = ""
+    default_base_url: str = ""
+    requires_api_key: bool = True
+    requires_model_name: bool = True
+    requires_base_url: bool = True
+    show_api_key: bool = True
+    show_base_url: bool = True
+    extra_fields: List[LlmProviderExtraField] = []
+
+
+class CatalogData(BaseModel):
+    fonts: List[str]
+    tts_servers: List[TtsServerOption]
+    video_sources: dict[str, List[str]]
+    llm_providers: List[LlmProviderOption]
+    songs: List[str]
+    visual_styles: List[str]
+
+
+class CatalogResponse(BaseResponse):
+    data: CatalogData
+
+
+class VoiceOption(BaseModel):
+    value: str
+    label: str
+
+
+class VoiceListData(BaseModel):
+    tts_server: str
+    voices: List[VoiceOption]
+
+
+class VoiceListResponse(BaseResponse):
+    data: VoiceListData
+
+
+class SettingsData(BaseModel):
+    """Credentials appear as {set, count, hint}, never as their value."""
+
+    sections: dict[str, dict[str, Any]]
+
+
+class SettingsResponse(BaseResponse):
+    data: SettingsData
+
+
+class SettingsUpdateRequest(BaseModel):
+    sections: dict[str, dict[str, Any]]
+
+
+class SettingsUpdateData(BaseModel):
+    changed: List[str]
+
+
+class SettingsUpdateResponse(BaseResponse):
+    data: SettingsUpdateData

@@ -1,9 +1,14 @@
 # MoneyPrinterTurbo — React UI
 
-The library and episode-details screens. Creating a video still happens in the
-Streamlit wizard (`webui/Main.py`): its four form panels and the settings dialog
-have no REST equivalent yet. Both UIs read the same Postgres database, so a run
-started in either one shows up in this table.
+The library, episode details and the generation wizard. Both UIs read the same
+Postgres database and the same `config.toml`, so a run or a settings change made
+in either one shows up in the other.
+
+What is still Streamlit-only: voice preview, the Loomloom quote/confirm flow,
+VoxCPM reference audio, settings import/export, and file uploads (local
+material, custom voiceover, custom BGM). The wizard here covers subject and
+script, source and format, voice and music, and subtitles — which is every
+parameter a default run needs.
 
 ## Develop
 
@@ -19,8 +24,7 @@ unset in every compose file) a browser origin is rejected twice — by
 `CORSMiddleware`. A proxied request reaches FastAPI with no `Origin` header,
 which `is_browser_origin_allowed` explicitly permits.
 
-Point it elsewhere with `MPT_API_URL`, and set `VITE_STREAMLIT_URL` if Streamlit
-is not on :8501.
+Point it elsewhere with `MPT_API_URL`.
 
 ## Types
 

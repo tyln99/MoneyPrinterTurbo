@@ -36,7 +36,6 @@ import {
 
 const PAGE_SIZE = 20
 const ALL_PROJECTS = "all"
-const STREAMLIT_URL = import.meta.env.VITE_STREAMLIT_URL ?? "http://localhost:8501"
 
 const columnHelper = createColumnHelper<EpisodeSummary>()
 
@@ -149,15 +148,9 @@ export function Library() {
         <h1 className="mr-auto text-xl font-semibold">Library</h1>
         <NewProjectButton />
         <Button asChild>
-          {/*
-            Creating a video still lives in the Streamlit wizard: the four form
-            panels and the settings dialog have no REST equivalent yet (no
-            config, voice, font or provider endpoints exist). Both UIs read the
-            same database, so a run started there appears in this table.
-          */}
-          <a href={STREAMLIT_URL} target="_blank" rel="noreferrer">
+          <Link to="/create">
             <Plus /> New video
-          </a>
+          </Link>
         </Button>
       </header>
 

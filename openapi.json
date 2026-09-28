@@ -1477,6 +1477,223 @@
           }
         }
       }
+    },
+    "/api/v1/catalog": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Options a generation form is built from",
+        "description": "Everything cheap and local, in one request.\n\nVoices are deliberately not here: several providers fetch them over the\nnetwork, so one slow provider would hold up the whole form.",
+        "operationId": "get_catalog_api_v1_catalog_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/voices": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Voices offered by one TTS provider",
+        "description": "A provider that is unconfigured or unreachable returns an empty list rather\nthan an error, so the form still renders and the user can go and set a key.",
+        "operationId": "get_voices_api_v1_catalog_voices_get",
+        "parameters": [
+          {
+            "name": "tts_server",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "azure-tts-v1",
+              "title": "Tts Server"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings": {
+      "get": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Read the saved settings",
+        "operationId": "get_settings_api_v1_settings_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "V1"
+        ],
+        "summary": "Update the saved settings",
+        "description": "Writes go through `config.save_config`, which is the blocking path -- the\nsame one the CLI uses. The WebUI uses the non-blocking variant because a\nStreamlit rerun can land mid-render; an HTTP request has no such constraint\nand should not silently defer the user's save.",
+        "operationId": "put_settings_api_v1_settings_put",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsUpdateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1831,6 +2048,94 @@
         ],
         "title": "Body_upload_video_material_file_api_v1_video_materials_post"
       },
+      "CatalogData": {
+        "properties": {
+          "fonts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fonts"
+          },
+          "tts_servers": {
+            "items": {
+              "$ref": "#/components/schemas/TtsServerOption"
+            },
+            "type": "array",
+            "title": "Tts Servers"
+          },
+          "video_sources": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Video Sources"
+          },
+          "llm_providers": {
+            "items": {
+              "$ref": "#/components/schemas/LlmProviderOption"
+            },
+            "type": "array",
+            "title": "Llm Providers"
+          },
+          "songs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Songs"
+          },
+          "visual_styles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Visual Styles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fonts",
+          "tts_servers",
+          "video_sources",
+          "llm_providers",
+          "songs",
+          "visual_styles"
+        ],
+        "title": "CatalogData"
+      },
+      "CatalogResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CatalogData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CatalogResponse"
+      },
       "EpisodeDetailData": {
         "properties": {
           "id": {
@@ -2117,6 +2422,100 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LlmProviderExtraField": {
+        "properties": {
+          "config_suffix": {
+            "type": "string",
+            "title": "Config Suffix"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "secret": {
+            "type": "boolean",
+            "title": "Secret",
+            "default": false
+          },
+          "default_value": {
+            "type": "string",
+            "title": "Default Value",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "config_suffix"
+        ],
+        "title": "LlmProviderExtraField"
+      },
+      "LlmProviderOption": {
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "api_key_url": {
+            "type": "string",
+            "title": "Api Key Url",
+            "default": ""
+          },
+          "default_model": {
+            "type": "string",
+            "title": "Default Model",
+            "default": ""
+          },
+          "default_base_url": {
+            "type": "string",
+            "title": "Default Base Url",
+            "default": ""
+          },
+          "requires_api_key": {
+            "type": "boolean",
+            "title": "Requires Api Key",
+            "default": true
+          },
+          "requires_model_name": {
+            "type": "boolean",
+            "title": "Requires Model Name",
+            "default": true
+          },
+          "requires_base_url": {
+            "type": "boolean",
+            "title": "Requires Base Url",
+            "default": true
+          },
+          "show_api_key": {
+            "type": "boolean",
+            "title": "Show Api Key",
+            "default": true
+          },
+          "show_base_url": {
+            "type": "boolean",
+            "title": "Show Base Url",
+            "default": true
+          },
+          "extra_fields": {
+            "items": {
+              "$ref": "#/components/schemas/LlmProviderExtraField"
+            },
+            "type": "array",
+            "title": "Extra Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "label"
+        ],
+        "title": "LlmProviderOption"
       },
       "MaterialInfo": {
         "properties": {
@@ -2424,6 +2823,115 @@
           "data"
         ],
         "title": "SceneListResponse"
+      },
+      "SettingsData": {
+        "properties": {
+          "sections": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Sections"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sections"
+        ],
+        "title": "SettingsData",
+        "description": "Credentials appear as {set, count, hint}, never as their value."
+      },
+      "SettingsResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SettingsData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SettingsResponse"
+      },
+      "SettingsUpdateData": {
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Changed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "changed"
+        ],
+        "title": "SettingsUpdateData"
+      },
+      "SettingsUpdateRequest": {
+        "properties": {
+          "sections": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Sections"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sections"
+        ],
+        "title": "SettingsUpdateRequest"
+      },
+      "SettingsUpdateResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SettingsUpdateData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SettingsUpdateResponse"
       },
       "SubtitleRequest": {
         "properties": {
@@ -3404,6 +3912,24 @@
         ],
         "title": "TaskVideoRequest"
       },
+      "TtsServerOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "TtsServerOption"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -3918,6 +4444,74 @@
           "ZoomOut"
         ],
         "title": "VideoTransitionMode"
+      },
+      "VoiceListData": {
+        "properties": {
+          "tts_server": {
+            "type": "string",
+            "title": "Tts Server"
+          },
+          "voices": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceOption"
+            },
+            "type": "array",
+            "title": "Voices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tts_server",
+          "voices"
+        ],
+        "title": "VoiceListData"
+      },
+      "VoiceListResponse": {
+        "properties": {
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 200
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/VoiceListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "VoiceListResponse"
+      },
+      "VoiceOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "VoiceOption"
       }
     }
   }

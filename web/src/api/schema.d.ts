@@ -368,6 +368,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Options a generation form is built from
+         * @description Everything cheap and local, in one request.
+         *
+         *     Voices are deliberately not here: several providers fetch them over the
+         *     network, so one slow provider would hold up the whole form.
+         */
+        get: operations["get_catalog_api_v1_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Voices offered by one TTS provider
+         * @description A provider that is unconfigured or unreachable returns an empty list rather
+         *     than an error, so the form still renders and the user can go and set a key.
+         */
+        get: operations["get_voices_api_v1_catalog_voices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the saved settings */
+        get: operations["get_settings_api_v1_settings_get"];
+        /**
+         * Update the saved settings
+         * @description Writes go through `config.save_config`, which is the blocking path -- the
+         *     same one the CLI uses. The WebUI uses the non-blocking variant because a
+         *     Streamlit rerun can land mid-render; an HTTP request has no such constraint
+         *     and should not silently defer the user's save.
+         */
+        put: operations["put_settings_api_v1_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -534,6 +602,37 @@ export interface components {
             /** File */
             file: string;
         };
+        /** CatalogData */
+        CatalogData: {
+            /** Fonts */
+            fonts: string[];
+            /** Tts Servers */
+            tts_servers: components["schemas"]["TtsServerOption"][];
+            /** Video Sources */
+            video_sources: {
+                [key: string]: string[];
+            };
+            /** Llm Providers */
+            llm_providers: components["schemas"]["LlmProviderOption"][];
+            /** Songs */
+            songs: string[];
+            /** Visual Styles */
+            visual_styles: string[];
+        };
+        /** CatalogResponse */
+        CatalogResponse: {
+            /**
+             * Status
+             * @default 200
+             */
+            status: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string | null;
+            data: components["schemas"]["CatalogData"];
+        };
         /** EpisodeDetailData */
         EpisodeDetailData: {
             /** Id */
@@ -685,6 +784,78 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** LlmProviderExtraField */
+        LlmProviderExtraField: {
+            /** Config Suffix */
+            config_suffix: string;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Secret
+             * @default false
+             */
+            secret: boolean;
+            /**
+             * Default Value
+             * @default
+             */
+            default_value: string;
+        };
+        /** LlmProviderOption */
+        LlmProviderOption: {
+            /** Provider Id */
+            provider_id: string;
+            /** Label */
+            label: string;
+            /**
+             * Api Key Url
+             * @default
+             */
+            api_key_url: string;
+            /**
+             * Default Model
+             * @default
+             */
+            default_model: string;
+            /**
+             * Default Base Url
+             * @default
+             */
+            default_base_url: string;
+            /**
+             * Requires Api Key
+             * @default true
+             */
+            requires_api_key: boolean;
+            /**
+             * Requires Model Name
+             * @default true
+             */
+            requires_model_name: boolean;
+            /**
+             * Requires Base Url
+             * @default true
+             */
+            requires_base_url: boolean;
+            /**
+             * Show Api Key
+             * @default true
+             */
+            show_api_key: boolean;
+            /**
+             * Show Base Url
+             * @default true
+             */
+            show_base_url: boolean;
+            /**
+             * Extra Fields
+             * @default []
+             */
+            extra_fields: components["schemas"]["LlmProviderExtraField"][];
+        };
         /** MaterialInfo */
         MaterialInfo: {
             /**
@@ -822,6 +993,60 @@ export interface components {
              */
             message: string | null;
             data: components["schemas"]["SceneListData"];
+        };
+        /**
+         * SettingsData
+         * @description Credentials appear as {set, count, hint}, never as their value.
+         */
+        SettingsData: {
+            /** Sections */
+            sections: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /** SettingsResponse */
+        SettingsResponse: {
+            /**
+             * Status
+             * @default 200
+             */
+            status: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string | null;
+            data: components["schemas"]["SettingsData"];
+        };
+        /** SettingsUpdateData */
+        SettingsUpdateData: {
+            /** Changed */
+            changed: string[];
+        };
+        /** SettingsUpdateRequest */
+        SettingsUpdateRequest: {
+            /** Sections */
+            sections: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /** SettingsUpdateResponse */
+        SettingsUpdateResponse: {
+            /**
+             * Status
+             * @default 200
+             */
+            status: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string | null;
+            data: components["schemas"]["SettingsUpdateData"];
         };
         /** SubtitleRequest */
         SubtitleRequest: {
@@ -1299,6 +1524,13 @@ export interface components {
              */
             custom_system_prompt: string;
         };
+        /** TtsServerOption */
+        TtsServerOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1568,6 +1800,34 @@ export interface components {
          * @enum {string}
          */
         VideoTransitionMode: "None" | "Shuffle" | "FadeIn" | "FadeOut" | "SlideIn" | "SlideOut" | "ZoomIn" | "ZoomOut";
+        /** VoiceListData */
+        VoiceListData: {
+            /** Tts Server */
+            tts_server: string;
+            /** Voices */
+            voices: components["schemas"]["VoiceOption"][];
+        };
+        /** VoiceListResponse */
+        VoiceListResponse: {
+            /**
+             * Status
+             * @default 200
+             */
+            status: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string | null;
+            data: components["schemas"]["VoiceListData"];
+        };
+        /** VoiceOption */
+        VoiceOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -2418,6 +2678,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskLogResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_catalog_api_v1_catalog_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-api-key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_voices_api_v1_catalog_voices_get: {
+        parameters: {
+            query?: {
+                tts_server?: string;
+            };
+            header?: {
+                "x-api-key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_v1_settings_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-api-key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_settings_api_v1_settings_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-api-key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsUpdateResponse"];
                 };
             };
             /** @description Validation Error */

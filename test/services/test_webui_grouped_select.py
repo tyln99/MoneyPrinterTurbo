@@ -1,4 +1,3 @@
-import ast
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -8,7 +7,7 @@ import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from app.config import config
-from app.services import voice
+from app.services import catalog, voice
 
 
 ROOT_DIR = Path(__file__).parent.parent.parent
@@ -149,20 +148,21 @@ def test_submit_validation_is_derived_from_the_dropdown_groups():
     the derivation rather than re-listing the sources a third time.
     """
     source = WEBUI_MAIN.read_text(encoding="utf-8")
-    tree = ast.parse(source)
 
-    groups = next(
-        ast.literal_eval(node.value)
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Assign)
-        and any(
-            isinstance(t, ast.Name) and t.id == "VIDEO_SOURCE_GROUPS"
-            for t in node.targets
-        )
-    )
-    selectable = {source_id for group in groups.values() for source_id in group}
+    selectable = {
+        source_id
+        for group in catalog.VIDEO_SOURCE_GROUPS.values()
+        for source_id in group
+    }
     assert "pollinations_image" in selectable
     assert "openai_image" in selectable
+    assert selectable == set(catalog.SELECTABLE_VIDEO_SOURCES)
+
+    # The groups live in the service layer so the REST catalog endpoint and the
+    # dropdown cannot offer different sources. The page must alias them, not
+    # restate them.
+    assert "VIDEO_SOURCE_GROUPS = catalog.VIDEO_SOURCE_GROUPS" in source
+    assert "SELECTABLE_VIDEO_SOURCES = catalog.SELECTABLE_VIDEO_SOURCES" in source
 
     assert "params.video_source not in SELECTABLE_VIDEO_SOURCES" in source, (
         "submit validation must use the set derived from VIDEO_SOURCE_GROUPS, "

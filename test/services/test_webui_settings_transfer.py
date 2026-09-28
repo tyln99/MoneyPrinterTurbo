@@ -7,6 +7,7 @@ import pytest
 from app.models.llm_provider import LLM_PROVIDER_REGISTRY, get_llm_provider
 from app.models.schema import VideoParams
 from app.services import bgm as bgm_service
+from app.services import ui_settings
 
 
 ROOT_DIR = Path(__file__).parent.parent.parent
@@ -81,6 +82,9 @@ def _load_settings_transfer_helpers():
         "VideoParams": VideoParams,
         "bgm_service": bgm_service,
         "LLM_PROVIDER_REGISTRY": LLM_PROVIDER_REGISTRY,
+        # CREDENTIAL_KEY_SUFFIXES 现在由服务层提供，供 WebUI 和 REST
+        # 设置接口共用，因此抽取出的常量赋值需要这个模块。
+        "ui_settings": ui_settings,
         # _apply_key_backup 写配置并清理控件状态，两者都由测试替身记录，
         # 这样可以验证真实实现而不需要启动 Streamlit 会话。
         "st": _FakeStreamlit(),

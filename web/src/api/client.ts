@@ -9,6 +9,22 @@ export type Asset = Schemas["AssetData"]
 export type Render = Schemas["RenderData"]
 export type Project = Schemas["ProjectData"]
 export type TaskStatus = Schemas["TaskStatusData"]
+export type VideoRequest = Schemas["TaskVideoRequest"]
+export type Catalog = Schemas["CatalogData"]
+export type VoiceOption = Schemas["VoiceOption"]
+export type LlmProvider = Schemas["LlmProviderOption"]
+
+/**
+ * A credential is never sent to the client; `read_settings` replaces it with
+ * this shape. Writing it back unchanged means sending UNCHANGED_SECRET, not
+ * the mask -- see app/services/ui_settings.py.
+ */
+export type MaskedSecret = { set: boolean; count: number; hint: string }
+export const UNCHANGED_SECRET = "__unchanged__"
+
+export function isMaskedSecret(value: unknown): value is MaskedSecret {
+  return typeof value === "object" && value !== null && "set" in value && "hint" in value
+}
 
 /**
  * The API wraps everything in `{status, message, data}` and, on a validation
@@ -82,6 +98,42 @@ export const api = {
       body: JSON.stringify({ project_id: projectId }),
     }),
   deleteTask: (id: string) => request<null>(`/api/v1/tasks/${id}`, { method: "DELETE" }),
+
+  catalog: () => request<Catalog>("/api/v1/catalog"),
+  voices: (ttsServer: string) =>
+    request<{ tts_server: string; voices: VoiceOption[] }>(
+      `/api/v1/catalog/voices?tts_server=${encodeURIComponent(ttsServer)}`,
+    ),
+  settings: () => request<{ sections: Record<string, Record<string, unknown>> }>("/api/v1/settings"),
+  saveSettings: (sections: Record<string, Record<string, unknown>>) =>
+    request<{ changed: string[] }>("/api/v1/settings", {
+      method: "PUT",
+      body: JSON.stringify({ sections }),
+    }),
+  // The LLM steps the wizard offers before submitting. Both are synchronous
+  // calls that can take ten seconds or more on a slow provider.
+  generateScript: (body: {
+    video_subject: string
+    video_language?: string
+    paragraph_number?: number
+  }) => request<{ video_script: string }>("/api/v1/scripts", {
+    method: "POST",
+    body: JSON.stringify(body),
+  }),
+  generateTerms: (body: {
+    video_subject: string
+    video_script: string
+    amount?: number
+    match_materials_to_script?: boolean
+  }) => request<{ video_terms: string[] }>("/api/v1/terms", {
+    method: "POST",
+    body: JSON.stringify(body),
+  }),
+  createVideo: (params: Partial<VideoRequest>) =>
+    request<{ task_id: string }>("/api/v1/videos", {
+      method: "POST",
+      body: JSON.stringify(params),
+    }),
 }
 
 /** app/models/const.py */
